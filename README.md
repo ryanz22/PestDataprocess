@@ -11,22 +11,6 @@
 > poetry run python3 app.py
 ```
 
-## HuggingFace Transformers
-
-### TrainingArguments
-
-evaluate_during_training => evaluation_strategy
-
-## How to run Jupyter notebook in VSCode
-
-Prepare python runtime by Pipenv or Poetry
-
-In VSCode, select the corresponding Python interpreter.
-
-## Documents
-
-[huggingface transformers](https://huggingface.co/docs/transformers/index)
-
 ## Wavelet
 
 [A gentle introduction to wavelet for data analysis](https://www.kaggle.com/code/asauve/a-gentle-introduction-to-wavelet-for-data-analysis/notebook)
