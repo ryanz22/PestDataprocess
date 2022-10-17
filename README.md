@@ -5,35 +5,6 @@
 [Getting Started with Conda or Poetry for Data Science Projects]
 (<https://medium.com/semantixbr/getting-started-with-conda-or-poetry-for-data-science-projects-1b3add43956d#:~:text=Conda%20and%20Poetry%20stand%20out,environment%20management%20for%20any%20language>.)
 
-### How to install CUDA on Ubuntu
-
-[cuda-1.6.1](https://developer.nvidia.com/cuda-11-6-1-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=20.04&target_type=deb_network)
-
-[cuda-1.7.1](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_network)
-
-### How to install PyTorch with Poetry
-
-New method can NOT specify cuda?
-
-```
-poetry add torch
-```
-
-[Install Pytorch](https://pytorch.org/)
-
-Follow above link to pick the suitable pytorch (verion, os, platform)
-
-Use the command to figure out the exact download url
-
-```
-pip3 install torch --extra-index-url https://download.pytorch.org/whl/cu116
-```
-
-Use this url in pyproject.toml
-```
-torch = { url = "https://download.pytorch.org/whl/cu116/torch-1.12.1%2Bcu116-cp310-cp310-linux_x86_64.whl" }
-```
-
 ### How to run
 
 ```sh
