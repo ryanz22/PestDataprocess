@@ -155,6 +155,18 @@ def filter(in_fn: str, type: str, fc: None | int, fr: None | Tuple[int, int], sr
     )
 
 
+@cli.command()
+@click.option('-f', '--in_fn', required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option('-l', '--length', type=float, required=True)
+@click.option('-o', '--offset', type=float, required=False, default=0.0)
+def slice(in_fn: str, offset: float, length: float):
+    y, sr = librosa.load(in_fn, sr=None, mono=False, offset=offset, duration=length)
+    out_fn = append_suffix(in_fn, 'sliced')
+    if pathlib.Path(in_fn).suffix != '.wav':
+        out_fn = change_ext(out_fn, '.wav')
+    sf.write(out_fn, y, sr)
+
+
 if __name__ == '__main__':
     print(f'python version is {sys.version_info}')
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
