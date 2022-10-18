@@ -18,7 +18,7 @@ def denoise(data: NDArray, sr: int) -> Tuple[NDArray, int]:
     return reduced_noise, sr
 
 
-def mono(y: NDArray, sr: int) -> Tuple[NDArray, int]:
+def to_mono(y: NDArray, sr: int) -> Tuple[NDArray, int]:
     print(f'shape: {y.shape}')
     print(f'rate: {sr}')
     if is_stereo(y):
