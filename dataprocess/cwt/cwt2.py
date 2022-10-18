@@ -14,7 +14,7 @@ from typing import List
 import gc
 from timeit import default_timer as timer
 from datetime import timedelta
-import ray
+#import ray
 import gc
 import pywt
 from . import calc_scales
@@ -241,7 +241,7 @@ def get_regions(mask, sr, species, filename):
     return pd.DataFrame(regs, columns=['Start', 'End', 'Duration','Species','File'])
 
 
-def plot_sigx2(d1, d2, name1='data 1', name2='data 2', cwt=True, db_range=30):
+def plot_sigx2(d1, d2, name1='data 1', name2='data 2', SR=22050, CMAP='magma', cwt=True, db_range=30):
     fig, axes = plt.subplots(1, 2, figsize=(16,4))
     d = [d1, d2]
     name = [name1, name2]
