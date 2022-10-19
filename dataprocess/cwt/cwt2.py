@@ -164,14 +164,14 @@ def scaleo_extract(filename, voices=12, sr=22050, low_freq=40, thres=-30, prom=0
     print(f'rd_file time: {timedelta(seconds=end-start)}')
 
     start = timer()
-    # cs, _ = cwt2(d, nv=voices, sr=sr, low_freq=low_freq) # wavelet transform
-    cs, _ = cwt3(d, nv=voices, sr=sr, low_freq=low_freq) # wavelet transform
-    cs = replace_zeroes(cs)
+    cs, _ = cwt2(d, nv=voices, sr=sr, low_freq=low_freq) # wavelet transform
+    # cs, _ = cwt3(d, nv=voices, sr=sr, low_freq=low_freq) # wavelet transform
+    # cs = replace_zeroes(cs)
     
     # del d # free d
     # gc.collect()
     end = timer()
-    print(f'cwt2 time: {timedelta(seconds=end-start)}')
+    print(f'cwt time: {timedelta(seconds=end-start)}')
 
     start = timer()
     v = calc_var(cs, thres) # coefficient variance
