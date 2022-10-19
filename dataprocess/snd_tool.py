@@ -11,6 +11,8 @@ from scipy.io import wavfile
 from util import append_suffix, change_ext
 from sound import (denoise as deno, to_mono, sound_file_info, resample as resam, load_audio_file,
                 test_static, is_stereo_sound)
+import warnings
+warnings.filterwarnings('ignore') # get rid of librosa warnings
 
 
 def main(args):
@@ -64,8 +66,9 @@ def denoise(in_fn: str):
     data, sr = librosa.load(in_fn, sr=None, mono=True)
     od, sr = deno(data, sr)
     out_fn = append_suffix(in_fn, 'denoised')
+    if pathlib.Path(in_fn).suffix != '.wav':
+        out_fn = change_ext(out_fn, '.wav')
     print(f'output file name: {out_fn}')
-    # wavfile.write(out_fn, sr, od)
     sf.write(out_fn, od, sr)
 
 

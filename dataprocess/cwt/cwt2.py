@@ -18,7 +18,7 @@ from datetime import timedelta
 import gc
 import pywt
 from . import calc_scales
-from util import replace_zeroes
+from dataprocess.util import replace_zeroes
 
 
 # Continous Wavelet Transform with Morlet wavelet 
@@ -157,7 +157,7 @@ def scaleo_extract(filename, voices=12, sr=22050, low_freq=40, thres=-30, prom=0
     print(f'threshold: {thres}, img_size: {img_size}')
 
     start = timer()
-    d = rd_file(filename)
+    d, sr, dura = rd_file(filename, sr=sr)
     print(f'scaleo_extract, data type: {d.dtype}')
 
     end = timer()
@@ -206,7 +206,7 @@ def rd_file(fname, sr: int=22050, offset=0, duration=60):
     duration = librosa.get_duration(y=data, sr=sr)
     print(f'data size should be {duration * sr * 4}')
     print(f'size of rd_file data: {data.size * data.itemsize}')
-    return data
+    return data, sr, duration
     #return data.astype(np.float16)
 
 
