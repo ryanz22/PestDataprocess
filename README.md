@@ -8,7 +8,7 @@
 ## Macbook env step
 
 ```sh
-brew install cairo
+brew install cairo gobject-introspection libsndfile
 ```
 
 ### How to run
