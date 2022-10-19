@@ -14,7 +14,7 @@ brew install cairo
 ### How to run
 
 ```sh
-> poetry run python3 app.py
+poetry run python3 dataprocess/snd_tool.py
 ```
 
 ## Wavelet
