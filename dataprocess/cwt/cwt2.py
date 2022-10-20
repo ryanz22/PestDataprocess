@@ -17,8 +17,7 @@ from datetime import timedelta
 #import ray
 import gc
 import pywt
-from . import calc_scales
-from dataprocess.util import replace_zeroes
+from dataprocess.util.data_process import replace_zeroes
 
 
 # Continous Wavelet Transform with Morlet wavelet 
@@ -74,14 +73,21 @@ def cwt2(data, nv=10, sr=1., low_freq=0.):
     return cfs, freq
 
 
+def calc_scales(totalscal: int=256, wavename: str='cmor3-3'):
+    fc = pywt.central_frequency(wavename)
+    cparam = 2 * fc * totalscal
+    scales = cparam / np.arange(totalscal, 1, -1)
+    return scales
+
+    
 def cwt3(data, nv=10, sr=1., low_freq=0.):
     # n_orig = data.size
     # ds = 1 / nv
     # _, _, wavscales = getDefaultScales(n_orig, ds, sr, low_freq)
     wavlet = 'cmor1.5-1'
     wavscales = calc_scales(256, wavlet)
-    print(f'num of scales: {wavscales.size}')
-    print(f'scales:\n{wavscales}')
+    # print(f'num of scales: {wavscales.size}')
+    # print(f'scales:\n{wavscales}')
 
     cfs, freq = pywt.cwt(data, wavscales, wavlet, 1 / sr)
 

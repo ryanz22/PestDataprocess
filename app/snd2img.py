@@ -5,7 +5,15 @@ from timeit import default_timer as timer
 from datetime import timedelta
 import psutil
 import click
-from cwt import batch_extract, scaleo_extract
+import numpy as np
+import librosa
+import librosa.display
+import matplotlib.pyplot as plt
+from dataprocess.cwt.cwt2 import ( batch_extract, scaleo_extract, rd_file,
+                                  cwt3, cwt2 )
+from dataprocess.cwt.scalogram import plot as zplot
+from dataprocess.util.data_process import replace_zeroes
+from dataprocess.util.file import change_ext
 
 
 CMAP = 'magma'
@@ -23,7 +31,7 @@ def cli():
             type=click.Path(exists=True, dir_okay=True, file_okay=False))
 @click.option('-o', '--out_dir', required=True, 
             type=click.Path(exists=False, dir_okay=True, file_okay=False))
-@click.option('--threshold', type=int, default=-30)
+@click.option('--threshold', type=int, default=-60)
 @click.option('--imgsize', type=int, default=256)
 def extract(in_dir: str, out_dir: str, threshold, imgsize):
     if not os.path.exists(out_dir):
@@ -58,7 +66,7 @@ def extract(in_dir: str, out_dir: str, threshold, imgsize):
             type=click.Path(exists=True, dir_okay=False, file_okay=True))
 @click.option('-o', '--out_dir', required=True, 
             type=click.Path(exists=False, dir_okay=True, file_okay=False))
-@click.option('--threshold', type=int, default=-30)
+@click.option('--threshold', type=int, default=-60)
 @click.option('--imgsize', type=int, default=256)
 def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
     if not os.path.exists(out_dir):
@@ -67,6 +75,18 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
     else:
         print(f'folder {out_dir} exists')
     scaleo_extract(in_fn, outdir=out_dir, thres=threshold, img_size=imgsize)
+
+
+@cli.command()
+@click.option('-i', '--in_fn', required=True,
+            type=click.Path(exists=True, dir_okay=False, file_okay=True))
+@click.option('-t', '--type', type=click.Choice(['waveshow', 'spectrogram', 'scalogram', 'all']), required=True)
+@click.option('--threshold', type=int, default=-60)
+def plot(in_fn: str, type: str, threshold):
+    fig = zplot(in_fn, type, threshold)
+    out_fn = change_ext(in_fn, '.jpg')
+    fig.savefig(out_fn)
+    # plt.close()
 
 
 @cli.command()
@@ -154,4 +174,5 @@ if __name__ == '__main__':
 
     # main(targs)
 
+    print(f'sys.path:\n{sys.path}')
     cli()

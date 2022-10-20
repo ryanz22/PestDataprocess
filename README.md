@@ -14,7 +14,7 @@ brew install cairo gobject-introspection libsndfile
 ### How to run
 
 ```sh
-poetry run python3 dataprocess/snd_tool.py
+PYTHONPATH=. poetry run python3 app/snd_tool.py
 ```
 
 ## Wavelet

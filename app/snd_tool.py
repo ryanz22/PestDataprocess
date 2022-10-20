@@ -2,15 +2,18 @@ import os
 import sys
 import argparse
 import pathlib
+import numpy as np
 import pprint
 from typing import Tuple
 import librosa
 import click
 import soundfile as sf
 from scipy.io import wavfile
-from util import append_suffix, change_ext
-from sound import (denoise as deno, to_mono, sound_file_info, resample as resam, load_audio_file,
-                test_static, is_stereo_sound)
+
+from dataprocess.util.file import append_suffix, change_ext
+from dataprocess.sound.preprocess import (denoise as deno, to_mono, sound_file_info, 
+    resample as resam, is_stereo_sound)
+from dataprocess.sound.filter_util import (load_audio_file, freq_filter)
 import warnings
 warnings.filterwarnings('ignore') # get rid of librosa warnings
 
@@ -148,14 +151,21 @@ def filter(in_fn: str, type: str, fc: None | int, fr: None | Tuple[int, int], sr
     if pathlib.Path(in_fn).suffix != '.wav':
         out_fn = change_ext(out_fn, '.wav')
 
-    test_static(
+    out_frames = freq_filter(
         in_frames=in_frames,
         filter_type=type,
         params=params,
         Fs=sr,
-        output=out_fn,
+        do_plot=True,
         plot_dir='.'
     )
+
+    print(f'output: {out_fn}')
+    print(f'outframes:\n{out_frames[:20]}')
+    from scipy.io.wavfile import write
+    tmp = np.array(out_frames, dtype=np.int16)
+    write(out_fn, sr, tmp)
+    # sf.write(out_fn, out_frames, sr)
 
 
 @cli.command()
@@ -241,4 +251,5 @@ if __name__ == '__main__':
 
     # main(targs)
 
+    print(f'sys.path:\n{sys.path}')
     cli()    
