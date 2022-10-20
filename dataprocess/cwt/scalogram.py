@@ -39,7 +39,7 @@ def plot(in_fn: str, type: str, threshold):
         S_db = librosa.power_to_db(S, ref=np.max)
 
     if type == 'scalogram' or type == 'all':
-        #cs1, f1 = cwt2(d1, nv=12, sr=sr1, low_freq=40)
+        # cs1, f1 = cwt2(d1, nv=12, sr=sr1, low_freq=40)
         cs1, f1 = cwt3(d1, nv=12, sr=sr1, low_freq=40)
         print(f'shape of cs1: {cs1.shape}')
         print(f'cs1:\n{cs1[10][52000:52020]}')

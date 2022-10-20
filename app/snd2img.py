@@ -174,5 +174,5 @@ if __name__ == '__main__':
 
     # main(targs)
 
-    print(f'sys.path:\n{sys.path}')
+    # print(f'sys.path:\n{sys.path}')
     cli()
