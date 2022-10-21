@@ -5,13 +5,10 @@ from timeit import default_timer as timer
 from datetime import timedelta
 import psutil
 import click
-import numpy as np
-import librosa
-import librosa.display
-import matplotlib.pyplot as plt
+import logging
 from dataprocess.cwt.cwt2 import ( batch_extract, scaleo_extract, rd_file,
                                   cwt3, cwt2 )
-from dataprocess.cwt.scalogram import plot as zplot
+from dataprocess.cwt.scalogram import plot_file
 from dataprocess.util.data_process import replace_zeroes
 from dataprocess.util.file import change_ext
 
@@ -83,7 +80,7 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
 @click.option('-t', '--type', type=click.Choice(['waveshow', 'spectrogram', 'scalogram', 'all']), required=True)
 @click.option('--threshold', type=int, default=-60)
 def plot(in_fn: str, type: str, threshold):
-    fig = zplot(in_fn, type, threshold)
+    fig = plot_file(in_fn, type, threshold)
     out_fn = change_ext(in_fn, '.jpg')
     fig.savefig(out_fn)
     # plt.close()
@@ -175,4 +172,12 @@ if __name__ == '__main__':
     # main(targs)
 
     # print(f'sys.path:\n{sys.path}')
+
+    l_fmt = '[%(name)s %(levelname)s] %(asctime)s - %(message)s'
+    ch = logging.StreamHandler()
+    ch.setFormatter(logging.Formatter(l_fmt))
+    logger = logging.getLogger('dataprocess')
+    logger.addHandler(ch)
+    logger.setLevel(logging.ERROR)
+
     cli()

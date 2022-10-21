@@ -9,6 +9,7 @@ import librosa
 import click
 import soundfile as sf
 from scipy.io import wavfile
+import logging
 
 from dataprocess.util.file import append_suffix, change_ext
 from dataprocess.sound.preprocess import (denoise as deno, to_mono, sound_file_info, 
@@ -252,4 +253,15 @@ if __name__ == '__main__':
     # main(targs)
 
     print(f'sys.path:\n{sys.path}')
-    cli()    
+
+    # l_fmt = '[%(levelname)s] %(asctime)s - %(message)s'
+    # logging.basicConfig(level=logging.ERROR, format=l_fmt)
+
+    l_fmt = '[%(name)s %(levelname)s] %(asctime)s - %(message)s'
+    ch = logging.StreamHandler()
+    ch.setFormatter(logging.Formatter(l_fmt))
+    logger = logging.getLogger('dataprocess')
+    logger.addHandler(ch)
+    logger.setLevel(logging.DEBUG)
+
+    cli()

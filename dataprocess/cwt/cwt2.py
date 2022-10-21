@@ -19,6 +19,9 @@ import gc
 import pywt
 from dataprocess.util.data_process import replace_zeroes
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 # Continous Wavelet Transform with Morlet wavelet 
 # Original code by Alexander Neergaard, https://github.com/neergaard/CWT
@@ -38,32 +41,32 @@ def cwt2(data, nv=10, sr=1., low_freq=0.):
     padvalue = n_orig // 2
     x = np.concatenate((np.flipud(data[0:padvalue]), data, np.flipud(data[-padvalue:])))
     n = x.size
-    print(f'size of x: {n}, memory of x {x.size * x.itemsize}')
+    logger.debug(f'size of x: {n}, memory of x {x.size * x.itemsize}')
 
     # Define scales
     _, _, wavscales = getDefaultScales(n_orig, ds, sr, low_freq)
     num_scales = wavscales.size
-    print(f'num of scales: {num_scales}')
-    print(f'scales:\n{wavscales}')
+    logger.debug(f'num of scales: {num_scales}')
+    logger.debug(f'scales:\n{wavscales}')
 
     # Frequency vector sampling the Fourier transform of the wavelet
     # omega = np.arange(1, math.floor(n / 2) + 1, dtype=np.float64)
     omega = np.arange(1, math.floor(n / 2) + 1, dtype=np.float32)
     omega *= (2 * np.pi) / n
     omega = np.concatenate((np.array([0]), omega, -omega[np.arange(math.floor((n - 1) / 2), 0, -1, dtype=int) - 1]))
-    print(f'size of omega: {omega.size}, memory of omega {omega.size * omega.itemsize}')
+    logger.debug(f'size of omega: {omega.size}, memory of omega {omega.size * omega.itemsize}')
 
     # Compute FFT of the (padded) time series
     f = np.fft.fft(x)
-    print(f'size of f: {f.size}, memory of f  {f.size * f.itemsize}')
+    logger.debug(f'size of f: {f.size}, memory of f  {f.size * f.itemsize}')
 
     # Loop through all the scales and compute wavelet Fourier transform
     psift, freq = waveft(omega, wavscales)
-    print(f'size of psift: {psift.size}, memory of psift {psift.size * psift.itemsize}')
+    logger.debug(f'size of psift: {psift.size}, memory of psift {psift.size * psift.itemsize}')
 
     # Inverse transform to obtain the wavelet coefficients.
     cwtcfs = np.fft.ifft(np.kron(np.ones([num_scales, 1]), f) * psift)
-    print(f'size of cwtcfs: {cwtcfs.size}, memory of cwtcfs {cwtcfs.size * cwtcfs.itemsize}')
+    logger.debug(f'size of cwtcfs: {cwtcfs.size}, memory of cwtcfs {cwtcfs.size * cwtcfs.itemsize}')
     cfs = cwtcfs[:, padvalue:padvalue + n_orig]
     freq = freq * sr
 
@@ -86,8 +89,8 @@ def cwt3(data, nv=10, sr=1., low_freq=0.):
     # _, _, wavscales = getDefaultScales(n_orig, ds, sr, low_freq)
     wavlet = 'cmor1.5-1'
     wavscales = calc_scales(256, wavlet)
-    # print(f'num of scales: {wavscales.size}')
-    # print(f'scales:\n{wavscales}')
+    # logger.debug(f'num of scales: {wavscales.size}')
+    # logger.debug(f'scales:\n{wavscales}')
 
     cfs, freq = pywt.cwt(data, wavscales, wavlet, 1 / sr)
 
@@ -160,14 +163,14 @@ def img_resize(cs, w=512, h=512, log=True, lthres=-30, cmap: str='magma'):
 #@ray.remote
 def scaleo_extract(filename, voices=12, sr=22050, low_freq=40, thres=-30, prom=0.3, 
                    peakdur=0.3, sigthres=1, siglen=2, img_size=512, outdir='.'):
-    print(f'threshold: {thres}, img_size: {img_size}')
+    logger.debug(f'threshold: {thres}, img_size: {img_size}')
 
     start = timer()
     d, sr, dura = rd_file(filename, sr=sr)
-    print(f'scaleo_extract, data type: {d.dtype}')
+    logger.debug(f'scaleo_extract, data type: {d.dtype}')
 
     end = timer()
-    print(f'rd_file time: {timedelta(seconds=end-start)}')
+    logger.debug(f'rd_file time: {timedelta(seconds=end-start)}')
 
     start = timer()
     cs, _ = cwt2(d, nv=voices, sr=sr, low_freq=low_freq) # wavelet transform
@@ -177,7 +180,7 @@ def scaleo_extract(filename, voices=12, sr=22050, low_freq=40, thres=-30, prom=0
     # del d # free d
     # gc.collect()
     end = timer()
-    print(f'cwt time: {timedelta(seconds=end-start)}')
+    logger.debug(f'cwt time: {timedelta(seconds=end-start)}')
 
     start = timer()
     v = calc_var(cs, thres) # coefficient variance
@@ -187,7 +190,7 @@ def scaleo_extract(filename, voices=12, sr=22050, low_freq=40, thres=-30, prom=0
     df = df[df.Duration >= sigthres] # filter out insignificant signatures
     df = df.reset_index(drop=True)
     end = timer()
-    print(f'calc_vars mask_sig, get_regions time: {timedelta(seconds=end-start)}')
+    logger.debug(f'calc_vars mask_sig, get_regions time: {timedelta(seconds=end-start)}')
 
     start = timer()
     if len(df) > 0:
@@ -198,20 +201,21 @@ def scaleo_extract(filename, voices=12, sr=22050, low_freq=40, thres=-30, prom=0
             cv2.imwrite(outdir+'/'+fn, img)
 
     end = timer()
-    print(f'img_resize, imwrite time: {timedelta(seconds=end-start)}')
+    logger.debug(f'img_resize, imwrite time: {timedelta(seconds=end-start)}')
 
     #return df
 
 
 def rd_file(fname, sr: int=22050, offset=0, duration=60):
     data, sr = librosa.load(fname, sr=sr, mono=True, offset=offset, duration=duration, dtype=np.float32)
-    print(f'data type: {data.dtype}')
-    #print(data[2000:2020])
+    logger.debug(f'data type: {data.dtype}')
+    #logger.debug(data[2000:2020])
     data = minmax_scale(data-data.mean(), feature_range=(-1,1))
-    #print(data[2000:2020])
+    #logger.debug(data[2000:2020])
     duration = librosa.get_duration(y=data, sr=sr)
-    print(f'data size should be {duration * sr * 4}')
-    print(f'size of rd_file data: {data.size * data.itemsize}')
+    logger.debug(f'data size should be {duration * sr * 4}')
+    logger.debug(f'size of rd_file data: {data.size * data.itemsize}')
+    
     return data, sr, duration
     #return data.astype(np.float16)
 

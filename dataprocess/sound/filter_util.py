@@ -5,7 +5,10 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 from scipy.io.wavfile import read
 
-from .audio_filter import AudioFilter
+from dataprocess.sound.audio_filter import AudioFilter
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def freq_filter(in_frames, filter_type, params, Fs, do_plot=False, plot_dir='.'):
@@ -72,8 +75,8 @@ def load_audio_file(prerec_file):
     """
 
     soundfile = read(prerec_file)
-    print(f'sound shape: {soundfile[1].shape}')
-    print(f'sound data type: {soundfile[1].dtype}')
+    logger.debug(f'sound shape: {soundfile[1].shape}')
+    logger.debug(f'sound data type: {soundfile[1].dtype}')
     in_frames = np.array(soundfile[1], dtype=float)
 
     return in_frames

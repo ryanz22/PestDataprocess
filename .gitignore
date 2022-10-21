@@ -131,4 +131,5 @@ dmypy.json
 # Kevin
 data/sound/tmp
 data/image/tmp
+.vscode
 

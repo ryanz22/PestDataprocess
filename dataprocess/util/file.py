@@ -1,5 +1,8 @@
 from pathlib import Path
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def append_suffix(fn: str, suffix: str) -> str:
     path = Path(fn)
