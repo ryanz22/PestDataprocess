@@ -128,6 +128,10 @@ def info(in_fn: str):
 @click.option('--fr', nargs=2, type=int)
 @click.option('--sr', default=22050)
 def filter(in_fn: str, type: str, fc: None | int, fr: None | Tuple[int, int], sr: int):
+    _, fsr = librosa.load(in_fn, sr=None, mono=False)
+    if fsr != sr:
+        raise ValueError(f'input sound has {fsr} sample rate which is different than {sr}')
+
     match type:
         case None:
             raise ValueError('miss filter')
@@ -262,6 +266,6 @@ if __name__ == '__main__':
     ch.setFormatter(logging.Formatter(l_fmt))
     logger = logging.getLogger('dataprocess')
     logger.addHandler(ch)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.ERROR)
 
     cli()
