@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 import librosa
 import scipy
@@ -10,7 +11,7 @@ import matplotlib.pyplot as plt
 import cv2
 from functools import partial
 import io
-from typing import List
+from typing import List, Tuple
 import gc
 from timeit import default_timer as timer
 from datetime import timedelta
@@ -84,13 +85,15 @@ def calc_scales(totalscal: int=256, wavename: str='cmor3-3'):
 
     
 def cwt3(data, nv=10, sr=1., low_freq=0.):
+    data -= np.mean(data)
     # n_orig = data.size
     # ds = 1 / nv
     # _, _, wavscales = getDefaultScales(n_orig, ds, sr, low_freq)
     wavlet = 'cmor1.5-1'
     wavscales = calc_scales(256, wavlet)
-    # logger.debug(f'num of scales: {wavscales.size}')
-    # logger.debug(f'scales:\n{wavscales}')
+    # _, _, wavscales = getDefaultScales(data.size, 1/nv, sr, 40.0)
+    logger.debug(f'num of scales: {wavscales.size}')
+    logger.debug(f'scales:\n{wavscales}')
 
     cfs, freq = pywt.cwt(data, wavscales, wavlet, 1 / sr)
 
@@ -206,7 +209,7 @@ def scaleo_extract(filename, voices=12, sr=22050, low_freq=40, thres=-30, prom=0
     #return df
 
 
-def rd_file(fname, sr: int=22050, offset=0, duration=60):
+def rd_file(fname, sr: int=22050, offset=0, duration=60) -> Tuple[NDArray, int, float]:
     data, sr = librosa.load(fname, sr=sr, mono=True, offset=offset, duration=duration, dtype=np.float32)
     logger.debug(f'data type: {data.dtype}')
     #logger.debug(data[2000:2020])
