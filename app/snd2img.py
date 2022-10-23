@@ -79,6 +79,10 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
 @click.option('-t', '--type', type=click.Choice(['waveshow', 'spectrogram', 'scalogram', 'all']), required=True)
 @click.option('--threshold', type=int, default=-60)
 def plot(in_fn: str, type: str, threshold):
+    import matplotlib.pyplot as plt
+    plt.rcParams['figure.dpi'] = 300
+    plt.rcParams['savefig.dpi'] = 300
+
     fig = plot_file(in_fn, type, threshold)
     out_fn = change_ext(in_fn, '.jpg')
     fig.savefig(out_fn)
