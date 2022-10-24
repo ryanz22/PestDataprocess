@@ -38,14 +38,14 @@ def plot_file(in_fn: str, type: str, threshold: int=-60):
     return plot_data(d1, sr1, type, threshold)
 
 
-def plot_data(d1, sr1, type: str, threshold: int=-60):
+def plot_data(d, sr, type: str, threshold: int=-60):
     if type == 'spectrogram' or type == 'all':
-        F_MAX = sr1 // 2
-        S = librosa.feature.melspectrogram(y=d1, sr=sr1, n_mels=256, fmax=F_MAX)
+        F_MAX = sr // 2
+        S = librosa.feature.melspectrogram(y=d, sr=sr, n_mels=256, fmax=F_MAX)
         S_db = librosa.power_to_db(S, ref=np.max)
 
     if type == 'scalogram' or type == 'all':
-        cs1, f1 = cwt2(d1, nv=12, sr=sr1, low_freq=40)
+        cs1, f1 = cwt2(d, nv=12, sr=sr, low_freq=40)
         # cs1, f1 = cwt3(d1, nv=12, sr=sr1, low_freq=40)
         logger.debug(f'shape of cs1: {cs1.shape}')
         logger.debug(f'cs1:\n{cs1[10][52000:52020]}')
@@ -55,13 +55,13 @@ def plot_data(d1, sr1, type: str, threshold: int=-60):
         case 'waveshow':
             #fig = plt.figure(figsize=(10,4))
             fig, ax = plt.subplots(1, 1, figsize=(10,4))
-            librosa.display.waveshow(y=d1, sr=sr1, ax=ax)
+            librosa.display.waveshow(y=d, sr=sr, ax=ax)
             ax.set(title='wave show')
 
         case 'spectrogram':
             fig, ax = plt.subplots(1, 1, figsize=(10,4))
             img = librosa.display.specshow(S_db, x_axis='time', y_axis='mel',
-                                 sr=sr1, fmax=F_MAX, cmap='jet', ax=ax)
+                                 sr=sr, fmax=F_MAX, cmap='jet', ax=ax)
             fig.colorbar(img, ax=ax, format='%+2.0f dB')
             ax.set(title='Mel-frequency spectrogram')
 
@@ -70,24 +70,24 @@ def plot_data(d1, sr1, type: str, threshold: int=-60):
             cs1 = replace_zeroes(cs1)
             ax.imshow(20*np.log10(np.abs(cs1)), cmap='magma', aspect='auto', 
                 norm=None, vmax=0, vmin=-60, 
-                extent=[0.0, len(d1)/float(sr1), cs1.shape[0], 0])
+                extent=[0.0, len(d)/float(sr), cs1.shape[0], 0])
             ax.set_xlabel('Time')
             ax.set(title='Scalogram')
 
         case 'all':
             # fig, axes = plt.subplots(3, 1, figsize=(10,10), sharex=False)
             fig, axes = plt.subplots(3, 1, figsize=(10,10), sharex=True)
-            librosa.display.waveshow(y=d1, sr=sr1, ax=axes[0])
+            librosa.display.waveshow(y=d, sr=sr, ax=axes[0])
             axes[0].set(title='wave show')
 
             img = librosa.display.specshow(S_db, x_axis='time', y_axis='mel',
-                                 sr=sr1, fmax=F_MAX, cmap='jet', ax=axes[1])
+                                 sr=sr, fmax=F_MAX, cmap='jet', ax=axes[1])
             axes[1].set(title='Mel-frequency spectrogram')
 
             cs1 = replace_zeroes(cs1)
             axes[2].imshow(20*np.log10(np.abs(cs1)), cmap='magma', 
                 aspect='auto', norm=None, vmax=0, vmin=-60,
-                extent=[0.0, len(d1)/float(sr1), cs1.shape[0], 0])
+                extent=[0.0, len(d)/float(sr), cs1.shape[0], 0])
             axes[2].set(title='Scalogram')
 
             fig.subplots_adjust(hspace=0.4)
