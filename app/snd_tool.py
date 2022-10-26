@@ -22,7 +22,7 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command(help='denoise input sound file and output to the same location')
 @click.option('-f', '--in_fn', required=True, type=click.Path(exists=True, dir_okay=False))
 def denoise(in_fn: str):
     data, sr = librosa.load(in_fn, sr=None, mono=True)
@@ -34,7 +34,7 @@ def denoise(in_fn: str):
     sf.write(out_fn, od, sr)
 
 
-@cli.command()
+@cli.command(help='mono input sound file and output to the same location')
 @click.option('-f', '--in_fn', required=True, type=click.Path(exists=True, dir_okay=False))
 def mono(in_fn: str):
     if is_stereo_sound(in_fn):
@@ -48,7 +48,7 @@ def mono(in_fn: str):
         print('this is a mono sound track')
 
 
-@cli.command()
+@cli.command(help='normalize input sound file and output to the same location')
 @click.option('-f', '--in_fn', required=True, 
               type=click.Path(exists=True, dir_okay=False),
               help='convert any types of sound to mono 22050 wav')
@@ -60,7 +60,7 @@ def normalize(in_fn: str):
     sf.write(out_fn, data, sr)
 
 
-@cli.command()
+@cli.command(help='resample input sound file and output to the same location')
 @click.option('-f', '--in_fn', required=True, type=click.Path(exists=True, dir_okay=False))
 @click.option('-t', '--tsr', default=22050)
 def resample(in_fn: str, tsr: int):
@@ -72,14 +72,14 @@ def resample(in_fn: str, tsr: int):
     sf.write(out_fn, od, nsr)
 
 
-@cli.command()
+@cli.command(help='show info of input sound file')
 @click.option('-f', '--in_fn', required=True, type=click.Path(exists=True, dir_okay=False))
 def info(in_fn: str):
     t = sound_file_info(in_fn)
     pprint.pprint(t, indent=2)
 
 
-@cli.command()
+@cli.command(help='filter input sound file and output to the same location')
 @click.option('-f', '--in_fn', required=True, type=click.Path(exists=True, dir_okay=False))
 @click.option('-t', '--type', type=click.Choice(['lowpass', 'highpass', 'bandpass', 'bandstop']), required=True)
 @click.option('--fc', type=int)
@@ -131,7 +131,7 @@ def filter(in_fn: str, type: str, fc: None | int, fr: None | Tuple[int, int], sr
     # sf.write(out_fn, out_frames, sr)
 
 
-@cli.command()
+@cli.command(help='slice input sound file and output to the same location')
 @click.option('-f', '--in_fn', required=True, type=click.Path(exists=True, dir_okay=False))
 @click.option('-l', '--length', type=float, required=True)
 @click.option('-o', '--offset', type=float, required=False, default=0.0)

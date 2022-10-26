@@ -22,7 +22,7 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command(help='extract the cwt images from given sound files')
 @click.option('-i', '--in_dir', required=True,
             type=click.Path(exists=True, dir_okay=True, file_okay=False))
 @click.option('-o', '--out_dir', required=True, 
@@ -57,7 +57,7 @@ def extract(in_dir: str, out_dir: str, threshold, imgsize):
     print(f'======== total time: {timedelta(seconds=end-start)}')
 
 
-@cli.command()
+@cli.command(help='extract the cwt images from a given sound file')
 @click.option('-i', '--in_fn', required=True,
             type=click.Path(exists=True, dir_okay=False, file_okay=True))
 @click.option('-o', '--out_dir', required=True, 
@@ -73,7 +73,7 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
     scaleo_extract(in_fn, outdir=out_dir, thres=threshold, img_size=imgsize)
 
 
-@cli.command()
+@cli.command(help='plot given sound file')
 @click.option('-i', '--in_fn', required=True,
             type=click.Path(exists=True, dir_okay=False, file_okay=True))
 @click.option('-t', '--type', type=click.Choice(['waveshow', 'spectrogram', 'scalogram', 'all']), required=True)
@@ -89,7 +89,7 @@ def plot(in_fn: str, type: str, threshold):
     # plt.close()
 
 
-@cli.command()
+@cli.command(help='test functions')
 def test():
     pass
 
