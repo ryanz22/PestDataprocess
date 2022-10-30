@@ -50,3 +50,13 @@ PYTHONPATH=. poetry run python3 app/snd_tool.py
 ## Kaggle
 
 [How To Download Dataset From Kaggle](https://www.ankushchoubey.com/download_kaggle/)
+
+## Sound processing
+
+Make sound louder
+
+```sh
+ffmpeg -i data/sound/grasshopper-sound-4/gh-4_mono_22050_denoised.wav \
+  -filter:a 'volume=3.0' \
+  data/sound/grasshopper-sound-4/gh-4_mono_22050_denoised_louder.wav
+```
