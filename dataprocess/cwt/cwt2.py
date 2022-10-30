@@ -91,6 +91,15 @@ def cwt2(data, nv=10, sr=1.0, low_freq=0.0):
 
 
 def calc_scales(totalscal: int = 256, wavename: str = "cmor3-3"):
+    """calculate cwt scales
+
+    Args:
+        totalscal (int, optional): _description_. Defaults to 256.
+        wavename (str, optional): _description_. Defaults to "cmor3-3".
+
+    Returns:
+        list[float]: a list of scales
+    """
     fc = pywt.central_frequency(wavename)
     cparam = 2 * fc * totalscal
     scales = cparam / np.arange(totalscal, 1, -1)
