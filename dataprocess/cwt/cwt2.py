@@ -68,7 +68,7 @@ def cwt2(data, nv=10, sr=1.0, low_freq=0.0):
 
     # Compute FFT of the (padded) time series
     f = np.fft.fft(x)
-    logger.debug(f"size of f: {f.size}, memory of f  {f.size * f.itemsize}")
+    logger.debug("size of f: %i, memory of f %i", f.size, f.size * f.itemsize)
 
     # Loop through all the scales and compute wavelet Fourier transform
     psift, freq = waveft(omega, wavscales)
