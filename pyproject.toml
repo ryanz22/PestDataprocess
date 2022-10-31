@@ -54,6 +54,7 @@ scikit-learn = "1.1.2"
 [tool.poetry.group.dev.dependencies]
 black = {version = "^22.10.0", allow-prereleases = true}
 pylint = "^2.15.5"
+pytest = "^7.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
