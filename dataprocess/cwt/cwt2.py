@@ -16,7 +16,6 @@ from timeit import default_timer as timer
 from datetime import timedelta
 
 # import ray
-import gc
 import pywt
 from dataprocess.util.data_process import replace_zeroes
 
@@ -289,13 +288,13 @@ def mask_sig(n, peaks, sr=22050, dur=0.1):
     mask = np.zeros(n)
     subm = int(sr * dur * 0.5)
     if len(peaks > 0):
-        for i in range(len(peaks)):
-            mask[max(peaks[i] - subm, 0) : min(peaks[i] + subm, n)] = 1
+        for p in peaks:
+            mask[max(p - subm, 0) : min(p + subm, n)] = 1
     return mask
 
 
 def get_mask(vdata, prom=0.2, dur=0.2, sr=22050):
-    peaks, _ = find_peaks(vdata, prominence=prom)
+    peaks, _ = signal.find_peaks(vdata, prominence=prom)
     return mask_sig(len(vdata), peaks, sr, dur)
 
 
@@ -322,7 +321,7 @@ def plot_sigx2(
     d = [d1, d2]
     name = [name1, name2]
     for i in range(2):
-        if cwt == True:
+        if cwt is True:
             cs, _ = cwt2(d[i], nv=12, sr=SR, low_freq=40)
             axes[i].imshow(
                 20 * np.log10(np.abs(cs)),
