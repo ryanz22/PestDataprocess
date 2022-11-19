@@ -5,7 +5,13 @@
 [Getting Started with Conda or Poetry for Data Science Projects]
 (<https://medium.com/semantixbr/getting-started-with-conda-or-poetry-for-data-science-projects-1b3add43956d#:~:text=Conda%20and%20Poetry%20stand%20out,environment%20management%20for%20any%20language>.)
 
-## Macbook env step
+## Linux env setup
+
+```sh
+sudo apt install libcairo2-dev libsndfile-dev gobject-introspection libgirepository1.0-dev
+```
+
+## Macbook env setup
 
 ```sh
 brew install cairo gobject-introspection libsndfile
