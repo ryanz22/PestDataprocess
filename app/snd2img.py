@@ -94,19 +94,24 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
 )
 @click.option(
     "-t",
-    "--type",
-    type=click.Choice(["waveshow", "spectrogram", "scalogram", "all"]),
+    "--ptype",
+    type=click.Choice(["waveshow", "spectrogram", "scalogram", "fft", "all"]),
     required=True,
 )
 @click.option("--threshold", type=int, default=-60)
-def plot(in_fn: str, type: str, threshold):
+@click.option(
+    "-o",
+    "--out_fn",
+    required=True,
+    type=click.Path(exists=False, dir_okay=False, file_okay=True),
+)
+def plot(in_fn: str, ptype: str, threshold, out_fn: str):
     import matplotlib.pyplot as plt
 
     plt.rcParams["figure.dpi"] = 300
     plt.rcParams["savefig.dpi"] = 300
 
-    fig = plot_file(in_fn, type, threshold)
-    out_fn = change_ext(in_fn, ".jpg")
+    fig = plot_file(in_fn, ptype, threshold)
     fig.savefig(out_fn)
     # plt.close()
 

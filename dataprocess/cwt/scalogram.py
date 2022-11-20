@@ -7,6 +7,7 @@ import librosa
 import librosa.display
 from dataprocess.cwt.cwt2 import rd_file, cwt3, cwt2, calc_scales
 from dataprocess.util.data_process import replace_zeroes
+from dataprocess.sound.filter_util import preproc_time_input
 
 import logging
 
@@ -41,10 +42,24 @@ def plot_scalogram(
 
 def plot_file(in_fn: str, type: str, threshold: int = -60):
     d1, sr1, _ = rd_file(in_fn)
-    return plot_data(d1, sr1, type, threshold)
+    import scipy.io.wavfile as wavfile
+
+    _, d2 = wavfile.read(in_fn)
+    return plot_data(d1, d2, sr1, type, threshold)
 
 
-def plot_data(d, sr, type: str, threshold: int = -60):
+def fft_process(d2, sr):
+    from scipy.fft import rfft, rfftfreq
+
+    N = len(d2)
+    print(f"N: {N}")
+    yf = rfft(d2)
+    xf = rfftfreq(N, 1 / sr)
+
+    return xf, yf
+
+
+def plot_data(d, d2, sr, type: str, threshold: int = -60):
     if type == "spectrogram" or type == "all":
         F_MAX = sr // 2
         S = librosa.feature.melspectrogram(y=d, sr=sr, n_mels=256, fmax=F_MAX)
@@ -72,6 +87,14 @@ def plot_data(d, sr, type: str, threshold: int = -60):
             fig.colorbar(img, ax=ax, format="%+2.0f dB")
             ax.set(title="Mel-frequency spectrogram")
 
+        case "fft":
+            xf, yf = fft_process(d2, sr)
+            fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+            ax.plot(xf, np.abs(yf))
+            ax.set(title="FFT")
+            ax.set_xlabel("Frequence")
+            ax.set_ylabel("mag")
+
         case "scalogram":
             fig, ax = plt.subplots(1, 1, figsize=(10, 4))
             cs1 = replace_zeroes(cs1)
@@ -88,8 +111,8 @@ def plot_data(d, sr, type: str, threshold: int = -60):
             ax.set(title="Scalogram")
 
         case "all":
-            # fig, axes = plt.subplots(3, 1, figsize=(10,10), sharex=False)
-            fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True)
+            fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=False)
+            # fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
             librosa.display.waveshow(y=d, sr=sr, ax=axes[0])
             axes[0].set(title="wave show")
 
@@ -115,6 +138,12 @@ def plot_data(d, sr, type: str, threshold: int = -60):
                 extent=[0.0, len(d) / float(sr), cs1.shape[0], 0],
             )
             axes[2].set(title="Scalogram")
+
+            xf, yf = fft_process(d2, sr)
+            axes[3].plot(xf, np.abs(yf))
+            axes[3].set(title="FFT")
+            # axes[3].set_xlabel("Frequence")
+            # axes[3].set_ylabel("mag")
 
             fig.subplots_adjust(hspace=0.4)
 
