@@ -167,7 +167,7 @@ def filter(in_fn: str, type: str, fc: None | int, fr: None | Tuple[int, int], sr
 )
 @click.option("-l", "--length", type=float, required=True)
 @click.option("-o", "--offset", type=float, required=False, default=0.0)
-def slice(in_fn: str, offset: float, length: float):
+def single_slice(in_fn: str, offset: float, length: float):
     y, sr = librosa.load(in_fn, sr=None, mono=False, offset=offset, duration=length)
     out_fn = append_suffix(in_fn, "sliced")
     if pathlib.Path(in_fn).suffix != ".wav":

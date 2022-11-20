@@ -66,3 +66,15 @@ ffmpeg -i data/sound/grasshopper-sound-4/gh-4_mono_22050_denoised.wav \
   -filter:a 'volume=3.0' \
   data/sound/grasshopper-sound-4/gh-4_mono_22050_denoised_louder.wav
 ```
+
+## Image processing
+
+### Split large image to small images
+
+[Split-image](https://github.com/whiplashoo/split-image)
+
+```
+poetry run split-image
+```
+
+[Split any image with any degree of overlap](https://github.com/Devyanshu/image-split-with-overlap)
