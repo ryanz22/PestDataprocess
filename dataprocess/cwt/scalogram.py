@@ -41,11 +41,8 @@ def plot_scalogram(
 
 
 def plot_file(in_fn: str, type: str, threshold: int = -60):
-    d1, sr1, _ = rd_file(in_fn)
-    import scipy.io.wavfile as wavfile
-
-    _, d2 = wavfile.read(in_fn)
-    return plot_data(d1, d2, sr1, type, threshold)
+    d1, sr1 = librosa.load(in_fn, sr=None, mono=True)
+    return plot_data(d1, sr1, type, threshold)
 
 
 def fft_process(d2, sr):
@@ -55,11 +52,13 @@ def fft_process(d2, sr):
     print(f"N: {N}")
     yf = rfft(d2)
     xf = rfftfreq(N, 1 / sr)
+    # yf = np.fft.rfft(d2)
+    # xf = np.fft.rfftfreq(N, 1 / sr)
 
     return xf, yf
 
 
-def plot_data(d, d2, sr, type: str, threshold: int = -60):
+def plot_data(d, sr, type: str, threshold: int = -60):
     if type == "spectrogram" or type == "all":
         F_MAX = sr // 2
         S = librosa.feature.melspectrogram(y=d, sr=sr, n_mels=256, fmax=F_MAX)
@@ -88,7 +87,7 @@ def plot_data(d, d2, sr, type: str, threshold: int = -60):
             ax.set(title="Mel-frequency spectrogram")
 
         case "fft":
-            xf, yf = fft_process(d2, sr)
+            xf, yf = fft_process(d, sr)
             fig, ax = plt.subplots(1, 1, figsize=(10, 4))
             ax.plot(xf, np.abs(yf))
             ax.set(title="FFT")
@@ -139,7 +138,7 @@ def plot_data(d, d2, sr, type: str, threshold: int = -60):
             )
             axes[2].set(title="Scalogram")
 
-            xf, yf = fft_process(d2, sr)
+            xf, yf = fft_process(d, sr)
             axes[3].plot(xf, np.abs(yf))
             axes[3].set(title="FFT")
             # axes[3].set_xlabel("Frequence")
