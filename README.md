@@ -67,6 +67,14 @@ ffmpeg -i data/sound/grasshopper-sound-4/gh-4_mono_22050_denoised.wav \
   data/sound/grasshopper-sound-4/gh-4_mono_22050_denoised_louder.wav
 ```
 
+### Denoise
+
+[Noise reduction in python using spectral gating](https://github.com/timsainb/noisereduce)
+
+[A wavelet audio denoiser](https://github.com/actondev/wavelet-denoiser)
+
+very good with method=dwt
+
 ## Image processing
 
 ### Split large image to small images
