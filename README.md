@@ -75,6 +75,13 @@ ffmpeg -i data/sound/grasshopper-sound-4/gh-4_mono_22050_denoised.wav \
 
 very good with method=dwt
 
+```sh
+~/.cache/pypoetry/virtualenvs/pestdataprocess-pxU8UH9y-py3.10/bin/python3 \
+  src/denoiser-argument.py \
+  -i ~/work/github/python/PestDataprocess/data/sound/grasshopper-sound-4/gh-4_mono_22050.wav \
+  -method=dwt -wavelet dmey2 -o tmp2.wav
+```
+
 ## Image processing
 
 ### Split large image to small images
