@@ -311,6 +311,18 @@ def stretch(in_fn: str, in_dir: str, rate: float, out_dir: str):
         print("must specify either in_fn or in_dir")
 
 
+@cli.command(help="Convert to wav file")
+@click.option(
+    "-f",
+    "--in_fn",
+    type=click.Path(exists=True, dir_okay=False),
+)
+def to_wav(in_fn: str):
+    y, sr = librosa.load(in_fn, sr=None, mono=True)
+    out_fn = change_ext(in_fn, ".wav")
+    sf.write(out_fn, y, sr)
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
