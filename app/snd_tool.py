@@ -323,7 +323,7 @@ def to_wav(in_fn: str):
     sf.write(out_fn, y, sr)
 
 
-@cli.command(help="Mix two wav files")
+@cli.command(help="Mix two wav files, give two wav file names and output file name")
 @click.option(
     "-i",
     "--in_fn",
