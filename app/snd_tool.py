@@ -323,6 +323,41 @@ def to_wav(in_fn: str):
     sf.write(out_fn, y, sr)
 
 
+@cli.command(help="Mix two wav files")
+@click.option(
+    "-i",
+    "--in_fn",
+    nargs=2,
+    type=click.Path(exists=True, dir_okay=False),
+)
+@click.option(
+    "-o",
+    "--out_fn",
+    type=click.Path(exists=False, dir_okay=False),
+)
+def mix(in_fn: Tuple[str, str], out_fn: str):
+    fn_1, fn_2 = in_fn
+    y_1, sr_1 = librosa.load(fn_1, sr=None, mono=True)
+    y_2, sr_2 = librosa.load(fn_2, sr=None, mono=True)
+
+    if sr_1 != sr_2:
+        print(f"{fn_1} SR {sr_1} is different from {fn_2} SR {sr_2}")
+        return
+
+    dur_1 = librosa.get_duration(y=y_1, sr=sr_1)
+    dur_2 = librosa.get_duration(y=y_2, sr=sr_2)
+
+    if dur_1 != dur_2:
+        print(f"{fn_1} duration {dur_1} is different from {fn_2} duration {dur_2}")
+        new_dur = dur_1 if dur_1 < dur_2 else dur_2
+        print(f"shorter duration {new_dur} will be used")
+
+    y_1, sr_1 = librosa.load(fn_1, sr=None, mono=True, duration=new_dur)
+    y_2, sr_2 = librosa.load(fn_2, sr=None, mono=True, duration=new_dur)
+    y_mix = y_1 + y_2
+    sf.write(out_fn, y_mix, sr_1)
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
