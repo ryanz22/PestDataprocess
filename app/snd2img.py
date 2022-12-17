@@ -5,11 +5,13 @@ from datetime import timedelta
 import psutil
 import click
 import logging
+import librosa
 from dataprocess.cwt.cwt2 import batch_extract, scaleo_extract, rd_file, cwt3, cwt2
 from dataprocess.cwt.scalogram import plot_file
 from dataprocess.util.data_process import replace_zeroes
 from dataprocess.util.file import change_ext, check_create_folder
-
+from dataprocess.sound.plot_wav import show_sources
+from dataprocess.sound.nussl import AudioSignal
 
 CMAP = "magma"
 SR = 22050
@@ -114,6 +116,49 @@ def plot(in_fn: str, ptype: str, threshold, out_fn: str):
     fig = plot_file(in_fn, ptype, threshold)
     fig.savefig(out_fn)
     # plt.close()
+
+
+@cli.command(help="plot two wav files")
+@click.option(
+    "-f",
+    "--fore_fn",
+    type=click.Path(exists=True, dir_okay=False),
+)
+@click.option(
+    "-b",
+    "--back_fn",
+    type=click.Path(exists=True, dir_okay=False),
+)
+@click.option(
+    "-o",
+    "--out_fn",
+    type=click.Path(exists=False, dir_okay=False),
+)
+def plot_sources(fore_fn: str, back_fn: str, out_fn: str):
+    y_fore, sr_fore = librosa.load(fore_fn, sr=None, mono=True)
+    y_back, sr_back = librosa.load(back_fn, sr=None, mono=True)
+
+    if sr_fore != sr_back:
+        print(f"{fore_fn} SR {sr_fore} is different from {back_fn} SR {sr_back}")
+        return
+
+    dur_fore = librosa.get_duration(y=y_fore, sr=sr_fore)
+    dur_back = librosa.get_duration(y=y_back, sr=sr_back)
+
+    if dur_fore != dur_back:
+        print(
+            f"{fore_fn} duration {dur_fore} is different from {back_fn} duration {dur_back}"
+        )
+        new_dur = dur_fore if dur_fore < dur_back else dur_back
+        print(f"shorter duration {new_dur} will be used")
+
+    y_fore, sr_fore = librosa.load(fore_fn, sr=None, mono=True, duration=new_dur)
+    y_back, sr_back = librosa.load(back_fn, sr=None, mono=True, duration=new_dur)
+
+    fore_s = AudioSignal(audio_data_array=y_fore, sample_rate=sr_fore)
+    back_s = AudioSignal(audio_data_array=y_back, sample_rate=sr_back)
+    fig = show_sources({"foreground": fore_s, "background": back_s})
+    fig.savefig(out_fn)
 
 
 @cli.command(help="test functions")
