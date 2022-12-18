@@ -151,6 +151,8 @@ def plot_sources(fore_fn: str, back_fn: str, out_fn: str):
         )
         new_dur = dur_fore if dur_fore < dur_back else dur_back
         print(f"shorter duration {new_dur} will be used")
+    else:
+        new_dur = dur_fore
 
     y_fore, sr_fore = librosa.load(fore_fn, sr=None, mono=True, duration=new_dur)
     y_back, sr_back = librosa.load(back_fn, sr=None, mono=True, duration=new_dur)
