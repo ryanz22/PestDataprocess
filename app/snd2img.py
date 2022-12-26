@@ -6,6 +6,9 @@ import psutil
 import click
 import logging
 import librosa
+from typing import Tuple, List
+import functional as pyfun
+
 from dataprocess.cwt.cwt2 import batch_extract, scaleo_extract, rd_file, cwt3, cwt2
 from dataprocess.cwt.scalogram import plot_file
 from dataprocess.util.data_process import replace_zeroes
@@ -121,45 +124,104 @@ def plot(in_fn: str, ptype: str, threshold, out_fn: str):
 @cli.command(help="plot two wav files")
 @click.option(
     "-f",
-    "--fore_fn",
-    type=click.Path(exists=True, dir_okay=False),
+    "--fn_list",
+    type=click.Tuple([str, str]),
+    multiple=True,
+    required=True,
+    help='-f tag file_path'
 )
 @click.option(
-    "-b",
-    "--back_fn",
-    type=click.Path(exists=True, dir_okay=False),
+    "--sr",
+    type=int,
+    required=True
+)
+@click.option(
+    "--duration",
+    type=float,
+    required=True
 )
 @click.option(
     "-o",
     "--out_fn",
     type=click.Path(exists=False, dir_okay=False),
+    required=True
 )
-def plot_sources(fore_fn: str, back_fn: str, out_fn: str):
-    y_fore, sr_fore = librosa.load(fore_fn, sr=None, mono=True)
-    y_back, sr_back = librosa.load(back_fn, sr=None, mono=True)
+def plot_sources(fn_list: Tuple[Tuple[str, str]], sr: int, duration: float, out_fn: str):
+    print(type(fn_list))
+    print(fn_list)
 
-    if sr_fore != sr_back:
-        print(f"{fore_fn} SR {sr_fore} is different from {back_fn} SR {sr_back}")
+    for tag, fn in fn_list:
+        print(f'{tag:20s}{fn}')
+
+    all_fn = pyfun.seq(fn_list).map(lambda t: t[1]).list()
+
+    missing_fn = pyfun.seq(all_fn)\
+        .filter_not(lambda f: os.path.exists(fn))\
+        .list()
+
+    if missing_fn:
+        pyfun.seq(missing_fn).for_each(lambda fn: print(f'{fn} doesn\'t exist\n'))
         return
 
-    dur_fore = librosa.get_duration(y=y_fore, sr=sr_fore)
-    dur_back = librosa.get_duration(y=y_back, sr=sr_back)
+    def get_data(fn: str, duration: float = None):
+        y_t, sr_t = librosa.load(fn, sr=None, mono=True, duration=duration)
+        dur_t = librosa.get_duration(y=y_t, sr=sr_t)
+        return fn, y_t, sr_t, dur_t
 
-    if dur_fore != dur_back:
-        print(
-            f"{fore_fn} duration {dur_fore} is different from {back_fn} duration {dur_back}"
-        )
-        new_dur = dur_fore if dur_fore < dur_back else dur_back
-        print(f"shorter duration {new_dur} will be used")
-    else:
-        new_dur = dur_fore
+    all_data = pyfun.seq(all_fn).map(get_data).list()
 
-    y_fore, sr_fore = librosa.load(fore_fn, sr=None, mono=True, duration=new_dur)
-    y_back, sr_back = librosa.load(back_fn, sr=None, mono=True, duration=new_dur)
+    def check_wav(fn: str, sr_i: int, duration_i: float) -> str | None:
+        if sr_i != sr and duration_i < duration:
+            msg = f'{fn} sample rate [{sr_i}] is NOT {sr} and duration [{duration_i}] is shorter than {duration}\n'
+            return msg
 
-    fore_s = AudioSignal(audio_data_array=y_fore, sample_rate=sr_fore)
-    back_s = AudioSignal(audio_data_array=y_back, sample_rate=sr_back)
-    fig = show_sources({"foreground": fore_s, "background": back_s})
+        if sr_i != sr:
+            msg = f'{fn} sample rate [{sr_i}] is NOT {sr}\n'
+            return msg
+
+        if duration_i < duration:
+            msg = f'{fn} duration [{duration_i}] is shorter than {duration}\n'
+            return msg
+        else:
+            return None
+        
+    # check sample rate and duration
+    wrong_list = pyfun.seq(all_data)\
+        .map(lambda t: check_wav(t[0], t[2], t[3]))\
+        .filter_not(lambda r: r is None)\
+        .list()
+
+    if wrong_list:
+        pyfun.seq(wrong_list).for_each(print)
+        return
+
+    # force specified duration
+    # new_all_data = pyfun.seq(all_fn)\
+    #     .map(lambda f: get_data(fn, duration))\
+    #     .map(lambda t: AudioSignal(audio_data_array=t[1], sample_rate=t[2]))\
+    #     .list()
+
+    new_all_data = []
+    for fn in all_fn:
+        _, y_t, sr_t, _ = get_data(fn, duration)
+        signal = AudioSignal(audio_data_array=y_t, sample_rate=sr_t)
+        new_all_data.append(signal)
+
+    all_tag = pyfun.seq(fn_list).map(lambda t: t[0]).list()
+    tmp = pyfun.seq(all_tag).zip(pyfun.seq(all_fn)).dict()
+    print(tmp)
+
+    meta = pyfun.seq(all_tag).zip(pyfun.seq(new_all_data)).dict()
+    print(meta)
+
+    # (_, y_t, sr_t, _) = get_data(all_fn[0], duration)
+    # gh = AudioSignal(audio_data_array=y_t, sample_rate=sr_t)
+    # (_, y_t, sr_t, _) = get_data(all_fn[1], duration)
+    # drone = AudioSignal(audio_data_array=y_t, sample_rate=sr_t)
+    # fig = show_sources({"foreground": gh, "background": drone})
+
+    #fig = show_sources({"foreground": meta['drone'], "background": meta['drone']})
+    fig = show_sources(meta)
     fig.savefig(out_fn)
 
 
