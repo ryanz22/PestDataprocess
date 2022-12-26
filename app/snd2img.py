@@ -196,16 +196,16 @@ def plot_sources(fn_list: Tuple[Tuple[str, str]], sr: int, duration: float, out_
         return
 
     # force specified duration
-    # new_all_data = pyfun.seq(all_fn)\
-    #     .map(lambda f: get_data(fn, duration))\
-    #     .map(lambda t: AudioSignal(audio_data_array=t[1], sample_rate=t[2]))\
-    #     .list()
+    new_all_data = pyfun.seq(all_fn)\
+        .map(lambda f: get_data(f, duration))\
+        .map(lambda t: AudioSignal(audio_data_array=t[1], sample_rate=t[2]))\
+        .list()
 
-    new_all_data = []
-    for fn in all_fn:
-        _, y_t, sr_t, _ = get_data(fn, duration)
-        signal = AudioSignal(audio_data_array=y_t, sample_rate=sr_t)
-        new_all_data.append(signal)
+    # new_all_data = []
+    # for fn in all_fn:
+    #     _, y_t, sr_t, _ = get_data(fn, duration)
+    #     signal = AudioSignal(audio_data_array=y_t, sample_rate=sr_t)
+    #     new_all_data.append(signal)
 
     all_tag = pyfun.seq(fn_list).map(lambda t: t[0]).list()
     tmp = pyfun.seq(all_tag).zip(pyfun.seq(all_fn)).dict()
