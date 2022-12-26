@@ -76,7 +76,7 @@ def plot_data(d, sr, type: str, threshold: int = -60):
             # fig = plt.figure(figsize=(10,4))
             fig, ax = plt.subplots(1, 1, figsize=(10, 4))
             librosa.display.waveshow(y=d, sr=sr, ax=ax)
-            ax.set(title="wave show")
+            ax.set(title="Wave Show")
 
         case "spectrogram":
             fig, ax = plt.subplots(1, 1, figsize=(10, 4))
@@ -84,15 +84,15 @@ def plot_data(d, sr, type: str, threshold: int = -60):
                 S_db, x_axis="time", y_axis="mel", sr=sr, fmax=F_MAX, cmap="jet", ax=ax
             )
             fig.colorbar(img, ax=ax, format="%+2.0f dB")
-            ax.set(title="Mel-frequency spectrogram")
+            ax.set(title="Mel-Frequency Spectrogram")
 
         case "fft":
             xf, yf = fft_process(d, sr)
             fig, ax = plt.subplots(1, 1, figsize=(10, 4))
             ax.plot(xf, np.abs(yf))
             ax.set(title="FFT")
-            ax.set_xlabel("Frequence")
-            ax.set_ylabel("mag")
+            ax.set_xlabel("Frequency")
+            ax.set_ylabel("Magnitude")
 
         case "scalogram":
             fig, ax = plt.subplots(1, 1, figsize=(10, 4))
