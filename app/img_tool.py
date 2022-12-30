@@ -9,7 +9,7 @@ import click
 import logging
 import cv2
 
-from dataprocess.image.split import overlap_split as o_split
+from dataprocess.image.split import overlap_split as o_split, split_image
 from dataprocess.util.file import append_suffix, change_ext, check_create_folder
 
 
@@ -52,6 +52,25 @@ def overlap_split(in_fn: str, width: int, height: int, overlap: float, out_dir: 
         cv2.imwrite(str(out_path / out_fn), c)
 
 
+@cli.command(help="Split large image into small ones")
+@click.option(
+    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option("--row", type=int, required=True)
+@click.option("--col", type=int, required=True)
+@click.option("--square", type=bool, required=False, default=False)
+@click.option(
+    "--out_dir", required=True, type=click.Path(exists=False, file_okay=False)
+)
+def split(in_fn: str, row: int, col: int, square: bool, out_dir):
+    if os.path.isdir(in_fn):
+        for file in os.listdir(in_fn):
+            if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith(".png"):
+                split_image(os.path.join(in_fn, file), row, col,
+                            square, False, False, out_dir)
+    else:
+        split_image(in_fn, row, col, square, False, False, out_dir)
+                
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):

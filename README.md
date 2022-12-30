@@ -23,6 +23,14 @@ brew install cairo gobject-introspection libsndfile
 PYTHONPATH=. poetry run python3 app/snd_tool.py
 ```
 
+[Rename all files in directory](https://stackoverflow.com/questions/7450818/rename-all-files-in-directory-from-filename-h-to-filename-half)
+
+rename all files in a folder from x.y to bx.y
+
+```sh
+for f in *.jpg; do mv $f "b$f"; done
+```
+
 ## Wavelet
 
 [A gentle introduction to wavelet for data analysis](https://www.kaggle.com/code/asauve/a-gentle-introduction-to-wavelet-for-data-analysis/notebook)
