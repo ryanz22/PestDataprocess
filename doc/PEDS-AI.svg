@@ -1,0 +1,46 @@
+<svg 
+  width="300px"
+  height="150px"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="-24.9140625 14.899999999999999 549.828125 120.2"
+  style="background: rgba(0, 0, 0, 0);"
+  preserveAspectRatio="xMidYMid">
+  <defs>
+    <filter id="editing-neon" x="-100%" y="-100%" width="300%" height="300%">
+      <feFlood flood-color="#00ff2f" result="flood"></feFlood>
+      <feComposite operator="in" in="flood" in2="SourceAlpha" result="color"></feComposite>
+      <feFlood flood-color="#00ff2f" result="flood2"></feFlood>
+      <feComposite operator="in" in="flood2" in2="SourceAlpha" result="color2"></feComposite>
+      <feMorphology operator="dilate" radius="2" in="color" result="dilate"></feMorphology>
+      <feGaussianBlur stdDeviation="6" in="color" result="blur1"></feGaussianBlur>
+      <feGaussianBlur stdDeviation="2.5" in="color" result="blur2"></feGaussianBlur>
+      <feGaussianBlur stdDeviation="1" in="SourceAlpha" result="blur3"></feGaussianBlur>
+      <feGaussianBlur stdDeviation="6" in="dilate" result="blur4"></feGaussianBlur>
+      <feConvolveMatrix in="color2" result="conv" order="3,3" divisor="1" kernelMatrix="1 1 1  1 1 1  1 1 1"></feConvolveMatrix>
+      <feMerge>
+        <feMergeNode in="blur1"></feMergeNode>
+        <feMergeNode in="blur2"></feMergeNode>
+        <feMergeNode in="blur4"></feMergeNode>
+        <feMergeNode in="blur3"></feMergeNode>
+        <feMergeNode in="blur3"></feMergeNode>
+        <feMergeNode in="blur3"></feMergeNode>
+        <feMergeNode in="blur3"></feMergeNode>
+        <feMergeNode in="conv"></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#editing-neon)">
+    <g transform="translate(54.764968156814575, 97.23999977111816)">
+      <path d="M58.69-20.80L19.07-20.80L19.07-2.88L25.47-2.88L25.47 0L2.05 0L2.05-2.88L8.38-2.88L8.38-41.60L2.05-41.60L2.05-44.48L58.69-44.48L58.69-20.80ZM55.81-41.60L19.07-41.60L19.07-23.68L55.81-23.68L55.81-41.60ZM11.33-2.88L16.19-2.88L16.19-41.60L11.33-41.60L11.33-2.88ZM121.86-32.64L118.98-32.64L118.98-41.60L80.26-41.60L80.26-23.68L108.54-23.68L108.54-30.02L111.49-30.02L111.49-14.46L108.54-14.46L108.54-20.80L80.26-20.80L80.26-2.88L118.98-2.88L118.98-11.84L121.86-11.84L121.86 0L63.23 0L63.23-2.88L69.57-2.88L69.57-41.60L63.23-41.60L63.23-44.48L121.86-44.48L121.86-32.64ZM77.38-2.88L77.38-41.60L72.45-41.60L72.45-2.88L77.38-2.88ZM127.04-44.48L176.45-44.48L176.45-44.48Q180.22-44.48 182.94-41.76L182.94-41.76L182.94-41.76Q185.66-39.04 185.66-35.20L185.66-35.20L185.66-9.22L185.66-9.22Q185.66-5.44 182.94-2.72L182.94-2.72L182.94-2.72Q180.22 0 176.45 0L176.45 0L127.04 0L127.04-2.88L133.38-2.88L133.38-41.60L127.04-41.60L127.04-44.48ZM141.18-2.88L141.18-41.60L136.32-41.60L136.32-2.88L141.18-2.88ZM182.78-9.22L182.78-35.20L182.78-35.20Q182.78-37.82 180.90-39.71L180.90-39.71L180.90-39.71Q179.01-41.60 176.45-41.60L176.45-41.60L144.06-41.60L144.06-2.88L176.45-2.88L176.45-2.88Q179.01-2.88 180.90-4.77L180.90-4.77L180.90-4.77Q182.78-6.66 182.78-9.22L182.78-9.22ZM193.47-44.48L245.70-44.48L245.70-32.64L242.82-32.64L242.82-41.60L204.16-41.60L204.16-23.68L245.70-23.68L245.70 0L193.47 0L193.47-11.84L196.35-11.84L196.35-2.88L235.01-2.88L235.01-20.80L193.47-20.80L193.47-44.48ZM242.82-20.80L237.89-20.80L237.89-2.88L242.82-2.88L242.82-20.80ZM201.22-23.68L201.22-41.60L196.35-41.60L196.35-23.68L201.22-23.68ZM283.33-26.18L283.33-16.38L253.44-16.38L253.44-26.18L283.33-26.18ZM280.45-19.26L280.45-23.30L256.32-23.30L256.32-19.26L280.45-19.26ZM346.05-2.88L352.38-2.88L352.38 0L336.83 0L336.83-2.88L343.17-2.88L343.17-20.80L304.51-20.80L304.51-2.88L310.85-2.88L310.85 0L287.42 0L287.42-2.88L293.82-2.88L293.82-41.60L287.42-41.60L287.42-44.48L346.05-44.48L346.05-2.88ZM301.57-2.88L301.57-41.60L296.70-41.60L296.70-2.88L301.57-2.88ZM304.51-23.68L343.17-23.68L343.17-41.60L304.51-41.60L304.51-23.68ZM388.42-41.60L376.90-41.60L376.90-2.88L388.42-2.88L388.42 0L354.69 0L354.69-2.88L366.21-2.88L366.21-41.60L354.69-41.60L354.69-44.48L388.42-44.48L388.42-41.60ZM374.02-2.88L374.02-41.60L369.09-41.60L369.09-2.88L374.02-2.88Z" fill="none" stroke="#e9ffd4" stroke-width="1">
+
+      </path>
+    </g>
+  </g>
+  <style>text {
+  font-size: 64px;
+  font-family: Arial Black;
+  dominant-baseline: central;
+  text-anchor: middle;
+}</style>
+</svg>

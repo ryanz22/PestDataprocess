@@ -96,8 +96,24 @@ very good with method=dwt
 
 [Split-image](https://github.com/whiplashoo/split-image)
 
-```
+```sh
 poetry run split-image
 ```
 
 [Split any image with any degree of overlap](https://github.com/Devyanshu/image-split-with-overlap)
+
+## Insect info
+
+### gbif.org
+
+[Search ID by URL](https://www.gbif.org/species/1699053)
+
+Search ID by API
+
+```sh
+curl https://api.gbif.org/v1/species/1699053
+```
+
+### bugguide.net
+
+Bugguide: https://bugguide.net/node/view/151116
