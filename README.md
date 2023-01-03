@@ -102,6 +102,11 @@ poetry run split-image
 
 [Split any image with any degree of overlap](https://github.com/Devyanshu/image-split-with-overlap)
 
+### remove image background
+
+[Rembg is a tool to remove images background](https://github.com/danielgatis/rembg)
+
+
 ## Insect info
 
 ### gbif.org
