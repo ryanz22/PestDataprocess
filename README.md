@@ -122,3 +122,10 @@ curl https://api.gbif.org/v1/species/1699053
 ### bugguide.net
 
 Bugguide: https://bugguide.net/node/view/151116
+
+## Datasets
+
+### Sound
+
+[xeno-canto - sharing wildlife sounds from around the world]
+(https://xeno-canto.org/)
