@@ -39,6 +39,7 @@ scikit-learn = "1.1.2"
 scaper = "^1.6.5"
 ffmpeg-python = "^0.2.0"
 rembg = "^2.0.30"
+split-folders = "^0.5.1"
 
 [tool.poetry.dev-dependencies]
 
