@@ -108,19 +108,25 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
 
     def inner_fn(fn, idir) -> str:
         if fn.startswith(idir):
-            return fn[len(idir) :]
+            nfn = fn[len(idir) :]
+            if nfn.startswith("/"):
+                nfn = nfn[1:]
+            return nfn
         else:
-            return fn
+            return f"error[inner_fn -> fn is not in idir]: fn {fn} idir {idir}"
 
     def output_fn(fn: str, outdir: str) -> str:
         p = pathlib.Path(outdir)
+        nfn = str(pathlib.Path.joinpath(p, fn))
+        if not nfn.startswith(outdir):
+            return f"error[output_fn -> fn is not in outdir]: fn {fn} outdir {outdir}"
 
-        return str(pathlib.Path.joinpath(p, fn))
+        return nfn
 
     def resize(fn: str, ofn: str, rwidth: int, rheight: int) -> str:
         img = cv2.imread(fn)
         if img is None:
-            return f"****** failed to read {fn}"
+            return f"error: failed to read {fn}"
 
         (h, w) = img.shape[:2]
         if rheight == 0:
@@ -143,7 +149,18 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
     # resize(result[0], t2, 512, 0)
     p_inner = partial(inner_fn, idir=in_dir)
     p_output_fn = partial(output_fn, outdir=out_dir)
-    out_fn_list = functional.seq(result).map(p_inner).map(p_output_fn).list()
+    inner_fn_list = functional.seq(result).map(p_inner).list()
+    err = functional.seq(inner_fn_list).filter(lambda s: s.startswith("error"))
+    if err.non_empty():
+        err.for_each(print)
+        return
+
+    out_fn_list = functional.seq(inner_fn_list).map(p_output_fn).list()
+    err2 = functional.seq(out_fn_list).filter(lambda s: s.startswith("error"))
+    if err2.non_empty():
+        err2.for_each(print)
+        return
+
     fn_pair_list = functional.seq(result).zip(functional.seq(out_fn_list)).list()
     print(fn_pair_list)
     # processes=None, partition_size=None
