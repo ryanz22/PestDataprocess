@@ -10,7 +10,7 @@ from typing import Tuple, List
 import functional as pyfun
 
 from dataprocess.cwt.cwt2 import batch_extract, scaleo_extract, rd_file, cwt3, cwt2
-from dataprocess.cwt.scalogram import plot_file
+from dataprocess.cwt.scalogram import plot_data
 from dataprocess.util.data_process import replace_zeroes
 from dataprocess.util.file import change_ext, check_create_folder, append_suffix
 from dataprocess.sound.plot_wav import show_sources
@@ -103,14 +103,39 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
     type=click.Choice(["waveshow", "spectrogram", "scalogram", "fft", "all"]),
     required=True,
 )
-@click.option("--threshold", type=int, default=-60)
+@click.option("--threshold", type=int, default=-60, show_default=True)
+@click.option(
+    "--cmap", type=click.Choice(["jet", "magma"]), default="magma", show_default=True
+)
+@click.option(
+    "--dim",
+    type=(str, float, float),
+    default=("inch", 10.0, 4.0),
+    show_default=True,
+    help="output image dimension, can be ('inch', 10, 4) or ('cm', 20, 8) or ('px', 512, 512)",
+)
+@click.option(
+    "--show_scale",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="show plot scales",
+)
 @click.option(
     "-o",
     "--out_fn",
     required=False,
     type=click.Path(exists=False, dir_okay=False, file_okay=True),
 )
-def plot(in_fn: str, ptype: str, threshold, out_fn: str):
+def plot(
+    in_fn: str,
+    ptype: str,
+    threshold: int,
+    cmap: str,
+    dim,
+    show_scale: bool,
+    out_fn: str,
+):
     """_summary_
 
     Args:
@@ -120,12 +145,18 @@ def plot(in_fn: str, ptype: str, threshold, out_fn: str):
         out_fn (str): _description_
     """
     print(f"plot {in_fn} to {ptype} with threshold {threshold} to out_fn {out_fn}")
+    dim_t, _, _ = dim
+    if dim_t not in ["inch", "cm", "px"]:
+        print(f"unknown dim type: {dim_t}")
+        return
+
     import matplotlib.pyplot as plt
 
-    plt.rcParams["figure.dpi"] = 300
-    plt.rcParams["savefig.dpi"] = 300
+    plt.rcParams["figure.dpi"] = 256
+    plt.rcParams["savefig.dpi"] = 256
 
-    fig = plot_file(in_fn, ptype, threshold)
+    d1, sr1 = librosa.load(in_fn, sr=None, mono=True)
+    fig = plot_data(d1, sr1, ptype, threshold, cmap, dim, show_scale)
 
     if not out_fn:
         out_fn = append_suffix(in_fn, ptype)
@@ -133,6 +164,10 @@ def plot(in_fn: str, ptype: str, threshold, out_fn: str):
         print(f"output file name: {out_fn}")
 
     fig.savefig(out_fn)
+    # if show_scale:
+    #     fig.savefig(out_fn)
+    # else:
+    #     fig.savefig(out_fn, bbox_inches="tight", pad_inches=0)
     # plt.close() # no need
 
 
