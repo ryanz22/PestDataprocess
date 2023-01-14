@@ -129,3 +129,26 @@ Bugguide: https://bugguide.net/node/view/151116
 
 [xeno-canto - sharing wildlife sounds from around the world]
 (https://xeno-canto.org/)
+
+[xeno-canto Grasshopper sound]
+(https://xeno-canto.org/explore/taxonomy?fam=Acrididae)
+
+[xeno-canto grasshopper sound sample](https://xeno-canto.org/species/Arcyptera-kheili)
+
+[LOCUST & GRASSHOPPER SOUNDS](https://www.soundboard.com/sb/Locust_Grasshopper_sounds)
+
+[Avosound grasshopper](https://www.avosound.com/en-us/sound-effects/animal/grasshopper/)
+
+## Shell script
+
+[How To Use bash For Loop In One Line](https://www.cyberciti.biz/faq/linux-unix-bash-for-loop-one-line-command/)
+
+[Bash For Loop Examples](https://www.cyberciti.biz/faq/bash-for-loop/)
+
+Sample
+
+```bash
+scripts/multi_files.sh -a 'app/snd_tool.py' -t 'single-slice' \
+-g '--length 5.0 --offset 0.2 -f' \
+-f 'ls data/sound/grasshopper-sound-4/*mono_44k_denoised.wav'
+```

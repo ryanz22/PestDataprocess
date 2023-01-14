@@ -168,6 +168,15 @@ def filter(in_fn: str, type: str, fc: None | int, fr: None | Tuple[int, int], sr
 @click.option("-l", "--length", type=float, required=True)
 @click.option("-o", "--offset", type=float, required=False, default=0.0)
 def single_slice(in_fn: str, offset: float, length: float):
+    """_summary_
+
+    Args:
+        in_fn (str): _description_
+        offset (float): _description_
+        length (float): _description_
+    """
+    print(f"slice {in_fn} offset {offset} length {length}")
+
     y, sr = librosa.load(in_fn, sr=None, mono=False, offset=offset, duration=length)
     out_fn = append_suffix(in_fn, "sliced")
     if pathlib.Path(in_fn).suffix != ".wav":
@@ -176,7 +185,7 @@ def single_slice(in_fn: str, offset: float, length: float):
 
 
 @cli.command(
-    help="slices input sound file and output multiple sound tracks \
+    help="hop slice input sound file and output multiple sound tracks \
              to the given output folder"
 )
 @click.option(
@@ -185,11 +194,12 @@ def single_slice(in_fn: str, offset: float, length: float):
 @click.option(
     "--slice_len", type=int, required=True, help="the length of slice in second"
 )
-@click.option("--hop", type=int, required=True, help="hop forward in second")
+@click.option("--hop", type=float, required=True, help="hop forward in second")
 @click.option(
     "--out_dir", required=True, type=click.Path(exists=False, file_okay=False)
 )
-def slices(in_fn: str, slice_len: int, hop: int, out_dir: str):
+def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
+    print(f"slice {in_fn} slice_len {slice_len} hop {hop} out_dir {out_dir}")
     _, sr = librosa.load(in_fn, sr=None, mono=False)
     slices_gen = librosa.stream(
         in_fn,

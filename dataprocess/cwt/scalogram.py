@@ -81,7 +81,15 @@ def plot_data(d, sr, type: str, threshold: int = -60):
         case "spectrogram":
             fig, ax = plt.subplots(1, 1, figsize=(10, 4))
             img = librosa.display.specshow(
-                S_db, x_axis="time", y_axis="mel", sr=sr, fmax=F_MAX, cmap="jet", ax=ax
+                # S_db, x_axis="time", y_axis="mel", sr=sr, fmax=F_MAX, cmap="jet", ax=ax
+                S_db,
+                x_axis="time",
+                y_axis="mel",
+                sr=sr,
+                fmax=F_MAX,
+                cmap="magma",
+                ax=ax,
+                vmin=threshold,
             )
             fig.colorbar(img, ax=ax, format="%+2.0f dB")
             ax.set(title="Mel-Frequency Spectrogram")
@@ -103,7 +111,7 @@ def plot_data(d, sr, type: str, threshold: int = -60):
                 aspect="auto",
                 norm=None,
                 vmax=0,
-                vmin=-60,
+                vmin=threshold,
                 extent=[0.0, len(d) / float(sr), cs1.shape[0], 0],
             )
             ax.set_xlabel("Time")

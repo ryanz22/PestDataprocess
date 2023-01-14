@@ -12,7 +12,7 @@ import functional as pyfun
 from dataprocess.cwt.cwt2 import batch_extract, scaleo_extract, rd_file, cwt3, cwt2
 from dataprocess.cwt.scalogram import plot_file
 from dataprocess.util.data_process import replace_zeroes
-from dataprocess.util.file import change_ext, check_create_folder
+from dataprocess.util.file import change_ext, check_create_folder, append_suffix
 from dataprocess.sound.plot_wav import show_sources
 from dataprocess.sound.nussl import AudioSignal
 
@@ -107,18 +107,33 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
 @click.option(
     "-o",
     "--out_fn",
-    required=True,
+    required=False,
     type=click.Path(exists=False, dir_okay=False, file_okay=True),
 )
 def plot(in_fn: str, ptype: str, threshold, out_fn: str):
+    """_summary_
+
+    Args:
+        in_fn (str): _description_
+        ptype (str): _description_
+        threshold (_type_): _description_
+        out_fn (str): _description_
+    """
+    print(f"plot {in_fn} to {ptype} with threshold {threshold} to out_fn {out_fn}")
     import matplotlib.pyplot as plt
 
     plt.rcParams["figure.dpi"] = 300
     plt.rcParams["savefig.dpi"] = 300
 
     fig = plot_file(in_fn, ptype, threshold)
+
+    if not out_fn:
+        out_fn = append_suffix(in_fn, ptype)
+        out_fn = change_ext(out_fn, ".png")
+        print(f"output file name: {out_fn}")
+
     fig.savefig(out_fn)
-    # plt.close()
+    # plt.close() # no need
 
 
 @cli.command(help="plot two wav files")
@@ -128,39 +143,28 @@ def plot(in_fn: str, ptype: str, threshold, out_fn: str):
     type=click.Tuple([str, str]),
     multiple=True,
     required=True,
-    help='-f tag file_path'
+    help="-f tag file_path",
 )
+@click.option("--sr", type=int, required=True)
+@click.option("--duration", type=float, required=True)
 @click.option(
-    "--sr",
-    type=int,
-    required=True
+    "-o", "--out_fn", type=click.Path(exists=False, dir_okay=False), required=True
 )
-@click.option(
-    "--duration",
-    type=float,
-    required=True
-)
-@click.option(
-    "-o",
-    "--out_fn",
-    type=click.Path(exists=False, dir_okay=False),
-    required=True
-)
-def plot_sources(fn_list: Tuple[Tuple[str, str]], sr: int, duration: float, out_fn: str):
+def plot_sources(
+    fn_list: Tuple[Tuple[str, str]], sr: int, duration: float, out_fn: str
+):
     print(type(fn_list))
     print(fn_list)
 
     for tag, fn in fn_list:
-        print(f'{tag:20s}{fn}')
+        print(f"{tag:20s}{fn}")
 
     all_fn = pyfun.seq(fn_list).map(lambda t: t[1]).list()
 
-    missing_fn = pyfun.seq(all_fn)\
-        .filter_not(lambda f: os.path.exists(fn))\
-        .list()
+    missing_fn = pyfun.seq(all_fn).filter_not(lambda f: os.path.exists(fn)).list()
 
     if missing_fn:
-        pyfun.seq(missing_fn).for_each(lambda fn: print(f'{fn} doesn\'t exist\n'))
+        pyfun.seq(missing_fn).for_each(lambda fn: print(f"{fn} doesn't exist\n"))
         return
 
     def get_data(fn: str, duration: float = None):
@@ -172,34 +176,38 @@ def plot_sources(fn_list: Tuple[Tuple[str, str]], sr: int, duration: float, out_
 
     def check_wav(fn: str, sr_i: int, duration_i: float) -> str | None:
         if sr_i != sr and duration_i < duration:
-            msg = f'{fn} sample rate [{sr_i}] is NOT {sr} and duration [{duration_i}] is shorter than {duration}\n'
+            msg = f"{fn} sample rate [{sr_i}] is NOT {sr} and duration [{duration_i}] is shorter than {duration}\n"
             return msg
 
         if sr_i != sr:
-            msg = f'{fn} sample rate [{sr_i}] is NOT {sr}\n'
+            msg = f"{fn} sample rate [{sr_i}] is NOT {sr}\n"
             return msg
 
         if duration_i < duration:
-            msg = f'{fn} duration [{duration_i}] is shorter than {duration}\n'
+            msg = f"{fn} duration [{duration_i}] is shorter than {duration}\n"
             return msg
         else:
             return None
-        
+
     # check sample rate and duration
-    wrong_list = pyfun.seq(all_data)\
-        .map(lambda t: check_wav(t[0], t[2], t[3]))\
-        .filter_not(lambda r: r is None)\
+    wrong_list = (
+        pyfun.seq(all_data)
+        .map(lambda t: check_wav(t[0], t[2], t[3]))
+        .filter_not(lambda r: r is None)
         .list()
+    )
 
     if wrong_list:
         pyfun.seq(wrong_list).for_each(print)
         return
 
     # force specified duration
-    new_all_data = pyfun.seq(all_fn)\
-        .map(lambda f: get_data(f, duration))\
-        .map(lambda t: AudioSignal(audio_data_array=t[1], sample_rate=t[2]))\
+    new_all_data = (
+        pyfun.seq(all_fn)
+        .map(lambda f: get_data(f, duration))
+        .map(lambda t: AudioSignal(audio_data_array=t[1], sample_rate=t[2]))
         .list()
+    )
 
     # new_all_data = []
     # for fn in all_fn:
@@ -220,7 +228,7 @@ def plot_sources(fn_list: Tuple[Tuple[str, str]], sr: int, duration: float, out_
     # drone = AudioSignal(audio_data_array=y_t, sample_rate=sr_t)
     # fig = show_sources({"foreground": gh, "background": drone})
 
-    #fig = show_sources({"foreground": meta['drone'], "background": meta['drone']})
+    # fig = show_sources({"foreground": meta['drone'], "background": meta['drone']})
     fig = show_sources(meta)
     fig.savefig(out_fn)
 
