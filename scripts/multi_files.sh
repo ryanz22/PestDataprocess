@@ -1,0 +1,20 @@
+#!/bin/bash
+while getopts t:a:f:g: flag
+do
+    case "${flag}" in
+        t) task=${OPTARG};;
+        a) app=${OPTARG};;
+        f) file=${OPTARG};;
+        g) args=${OPTARG};;
+    esac
+done
+echo "app: $app";
+echo "task: $task";
+echo "file: $file";
+echo "args: $args";
+
+for fn in $($file)
+do 
+	echo "PYTHONPATH=. poetry run python $app $task $args $fn"
+	PYTHONPATH=. poetry run python $app $task $args $fn
+done

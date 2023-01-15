@@ -10,7 +10,13 @@ from typing import Tuple, List
 import functional as pyfun
 
 from dataprocess.cwt.cwt2 import batch_extract, scaleo_extract, rd_file, cwt3, cwt2
-from dataprocess.cwt.scalogram import plot_data
+from dataprocess.cwt.scalogram import (
+    plot_waveshow,
+    plot_spectro,
+    plot_scalo,
+    plot_all,
+    plot_fft,
+)
 from dataprocess.util.data_process import replace_zeroes
 from dataprocess.util.file import change_ext, check_create_folder, append_suffix
 from dataprocess.sound.plot_wav import show_sources
@@ -127,6 +133,13 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
     required=False,
     type=click.Path(exists=False, dir_okay=False, file_okay=True),
 )
+@click.option(
+    "--dpi",
+    required=False,
+    type=int,
+    default=256,
+    show_default=True,
+)
 def plot(
     in_fn: str,
     ptype: str,
@@ -135,6 +148,7 @@ def plot(
     dim,
     show_scale: bool,
     out_fn: str,
+    dpi: int,
 ):
     """_summary_
 
@@ -150,20 +164,26 @@ def plot(
         print(f"unknown dim type: {dim_t}")
         return
 
-    import matplotlib.pyplot as plt
-
-    plt.rcParams["figure.dpi"] = 256
-    plt.rcParams["savefig.dpi"] = 256
-
     d1, sr1 = librosa.load(in_fn, sr=None, mono=True)
-    fig = plot_data(d1, sr1, ptype, threshold, cmap, dim, show_scale)
 
     if not out_fn:
         out_fn = append_suffix(in_fn, ptype)
         out_fn = change_ext(out_fn, ".png")
         print(f"output file name: {out_fn}")
 
-    fig.savefig(out_fn)
+    match ptype:
+        case "waveshow":
+            plot_waveshow(d1, sr1, out_fn, dim, show_scale, dpi)
+        case "spectrogram":
+            plot_spectro(d1, sr1, out_fn, threshold, cmap, dim, show_scale, dpi)
+        case "fft":
+            plot_fft(d1, sr1, out_fn, dim, show_scale, dpi)
+        case "scalogram":
+            plot_scalo(d1, sr1, out_fn, threshold, cmap, dim, show_scale, dpi)
+        case "all":
+            plot_all(d1, sr1, out_fn, threshold, cmap, dim, show_scale, dpi)
+
+    # fig.savefig(out_fn)
     # if show_scale:
     #     fig.savefig(out_fn)
     # else:

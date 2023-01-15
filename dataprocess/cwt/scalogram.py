@@ -1,11 +1,13 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import Any
+from typing import Any, Tuple
 import matplotlib.pyplot as plt
 import pywt
 import librosa
 import librosa.display
-from dataprocess.cwt.cwt2 import rd_file, cwt3, cwt2, calc_scales
+import cv2
+
+from dataprocess.cwt.cwt2 import rd_file, cwt3, cwt2, calc_scales, img_resize
 from dataprocess.util.data_process import replace_zeroes
 from dataprocess.sound.filter_util import preproc_time_input
 
@@ -53,149 +55,223 @@ def fft_process(d2, sr):
     return xf, yf
 
 
-def plot_data(
+def convert_dim_inch(t: str, w: float, h: float, dpi: int) -> Tuple[float, float]:
+    ow = w
+    oh = h
+
+    match t:
+        case "cm":
+            cm = 1 / 2.54
+            ow = w * cm
+            oh = h * cm
+        case "px":
+            print(f"calc px, dpi: {dpi}")
+            px = 1 / dpi
+            ow = w * px
+            oh = h * px
+
+    return ow, oh
+
+
+def plot_waveshow(
     d,
     sr,
-    ptype: str,
+    out_fn: str,
+    dim=("inch", 10, 4),
+    show_scale: bool = False,
+    dpi: int = 256,
+):
+    t, w, h = dim
+    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
+    fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
+    librosa.display.waveshow(y=d, sr=sr, ax=ax)
+    if show_scale:
+        ax.set(title="Wave Show")
+    else:
+        ax.set_axis_off()
+
+    fig.savefig(out_fn)
+
+
+def plot_spectro(
+    d,
+    sr,
+    out_fn: str,
     threshold: int = -60,
     cmap: str = "magma",
     dim=("inch", 10, 4),
     show_scale: bool = False,
+    dpi: int = 256,
 ):
-    if ptype == "spectrogram" or ptype == "all":
-        F_MAX = sr // 2
-        S = librosa.feature.melspectrogram(y=d, sr=sr, n_mels=256, fmax=F_MAX)
-        S_db = librosa.power_to_db(S, ref=np.max)
+    F_MAX = sr // 2
+    S = librosa.feature.melspectrogram(y=d, sr=sr, n_mels=256, fmax=F_MAX)
+    S_db = librosa.power_to_db(S, ref=np.max)
 
-    if ptype == "scalogram" or ptype == "all":
-        cs1, f1 = cwt2(d, nv=12, sr=sr, low_freq=40)
-        # cs1, f1 = cwt3(d1, nv=12, sr=sr1, low_freq=40)
-        logger.debug(f"shape of cs1: {cs1.shape}")
-        logger.debug(f"cs1:\n{cs1[10][52000:52020]}")
-        logger.debug(f"shape of f1: {f1.shape}")
+    t, w, h = dim
+    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
 
-    dim_t, dim_w, dim_h = dim
-    match dim_t:
-        case "cm":
-            cm = 1 / 2.54
-            dim_w *= cm
-            dim_h *= cm
-        case "px":
-            dpi = plt.rcParams["figure.dpi"]  # pixel in inches
-            print(f"calc px, dpi: {dpi}")
-            px = 1 / dpi
-            dim_w *= px
-            dim_h *= px
+    fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
+    # fig = plt.figure(figsize=(dim_w, dim_h))
+
+    img = librosa.display.specshow(
+        # S_db, x_axis="time", y_axis="mel", sr=sr, fmax=F_MAX, cmap="jet", ax=ax
+        S_db,
+        x_axis="time" if show_scale else None,
+        y_axis="mel" if show_scale else None,
+        sr=sr,
+        fmax=F_MAX,
+        cmap=cmap,
+        ax=ax,
+        vmax=0,
+        vmin=threshold,
+    )
+
+    if show_scale:
+        fig.colorbar(img, ax=ax, format="%+2.0f dB")
+        ax.set(title="Mel-Frequency Spectrogram")
+    else:
+        ax.set_axis_off()
+
+    fig.savefig(out_fn)
+
+
+def plot_scalo(
+    d,
+    sr,
+    out_fn: str,
+    threshold: int = -60,
+    cmap: str = "magma",
+    dim=("inch", 10, 4),
+    show_scale: bool = False,
+    dpi: int = 256,
+):
+    cs1, f1 = cwt2(d, nv=12, sr=sr, low_freq=40)
+    # cs1, f1 = cwt3(d1, nv=12, sr=sr1, low_freq=40)
+    logger.debug(f"shape of cs1: {cs1.shape}")
+    logger.debug(f"cs1:\n{cs1[10][52000:52020]}")
+    logger.debug(f"shape of f1: {f1.shape}")
+
+    t, w, h = dim
+    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
+
+    cs1 = replace_zeroes(cs1)
+
+    if show_scale:
+        fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
+        ax.set_xlabel("Time")
+        ax.set(title="Scalogram")
+        img = ax.imshow(
+            20 * np.log10(np.abs(cs1)),
+            cmap=cmap,
+            aspect="auto",
+            norm=None,
+            vmax=0,
+            vmin=threshold,
+            extent=[0.0, len(d) / float(sr), cs1.shape[0], 0],
+        )
+        fig.colorbar(img, ax=ax, format="%+2.0f dB")
+        fig.savefig(out_fn)
+    else:
+        img = img_resize(cs1, w=512, h=512, log=True, lthres=threshold, cmap=cmap)
+        cv2.imwrite(out_fn, img)
+
+
+def plot_fft(
+    d,
+    sr,
+    out_fn: str,
+    dim=("inch", 10, 4),
+    show_scale: bool = False,
+    dpi: int = 256,
+):
+    xf, yf = fft_process(d, sr)
+
+    t, w, h = dim
+    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
+
+    fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
+    ax.plot(xf, np.abs(yf))
+
+    if show_scale:
+        ax.set(title="FFT")
+        ax.set_xlabel("Frequency")
+        ax.set_ylabel("Magnitude")
+    else:
+        ax.set_axis_off()
+
+    fig.savefig(out_fn)
+
+
+def plot_all(
+    d,
+    sr,
+    out_fn: str,
+    threshold: int = -60,
+    cmap: str = "magma",
+    dim=("inch", 10, 4),
+    show_scale: bool = False,
+    dpi: int = 256,
+):
+    F_MAX = sr // 2
+    S = librosa.feature.melspectrogram(y=d, sr=sr, n_mels=256, fmax=F_MAX)
+    S_db = librosa.power_to_db(S, ref=np.max)
+
+    cs1, f1 = cwt2(d, nv=12, sr=sr, low_freq=40)
+    # cs1, f1 = cwt3(d1, nv=12, sr=sr1, low_freq=40)
+    logger.debug(f"shape of cs1: {cs1.shape}")
+    logger.debug(f"cs1:\n{cs1[10][52000:52020]}")
+    logger.debug(f"shape of f1: {f1.shape}")
+
+    t, w, h = dim
+    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
 
     print(f"plot graph as {dim_w}inch x {dim_h}inch")
 
-    match ptype:
-        case "waveshow":
-            # fig = plt.figure(figsize=(10,4))
-            fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
-            librosa.display.waveshow(y=d, sr=sr, ax=ax)
-            if show_scale:
-                ax.set(title="Wave Show")
+    fig, axes = plt.subplots(4, 1, figsize=(dim_w, dim_h * 2.5), sharex=False)
+    # fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
+    librosa.display.waveshow(y=d, sr=sr, ax=axes[0])
 
-        case "spectrogram":
-            fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
-            # fig = plt.figure(figsize=(dim_w, dim_h))
+    librosa.display.specshow(
+        S_db,
+        x_axis="time" if show_scale else None,
+        y_axis="mel" if show_scale else None,
+        sr=sr,
+        fmax=F_MAX,
+        cmap=cmap,
+        ax=axes[1],
+        vmin=threshold,
+    )
 
-            if show_scale:
-                fig.colorbar(img, ax=ax, format="%+2.0f dB")
-                ax.set(title="Mel-Frequency Spectrogram")
+    cs1 = replace_zeroes(cs1)
+    axes[2].imshow(
+        20 * np.log10(np.abs(cs1)),
+        cmap=cmap,
+        aspect="auto",
+        norm=None,
+        vmax=0,
+        vmin=threshold,
+        extent=[0.0, len(d) / float(sr), cs1.shape[0], 0],
+    )
 
-            img = librosa.display.specshow(
-                # S_db, x_axis="time", y_axis="mel", sr=sr, fmax=F_MAX, cmap="jet", ax=ax
-                S_db,
-                x_axis="time" if show_scale else None,
-                y_axis="mel" if show_scale else None,
-                sr=sr,
-                fmax=F_MAX,
-                cmap=cmap,
-                ax=ax,
-                vmin=threshold,
-            )
+    xf, yf = fft_process(d, sr)
+    axes[3].plot(xf, np.abs(yf))
 
-        case "fft":
-            xf, yf = fft_process(d, sr)
-            fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
-            ax.plot(xf, np.abs(yf))
+    if show_scale:
+        axes[0].set(title="wave show")
+        axes[1].set(title="Mel-frequency spectrogram")
+        axes[2].set(title="Scalogram")
+        axes[3].set(title="FFT")
+        # axes[3].set_xlabel("Frequence")
+        # axes[3].set_ylabel("mag")
+    else:
+        # plt.axis("off")
+        axes[0].set_axis_off()
+        axes[1].set_axis_off()
+        axes[2].set_axis_off()
+        axes[3].set_axis_off()
 
-            if show_scale:
-                ax.set(title="FFT")
-                ax.set_xlabel("Frequency")
-                ax.set_ylabel("Magnitude")
-
-        case "scalogram":
-            cs1 = replace_zeroes(cs1)
-
-            # fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
-            fig = plt.figure(figsize=(dim_w, dim_h))
-
-            if show_scale:
-                ax = plt.Axes(fig, [0.1, 0.1, 0.8, 0.8])
-                fig.add_axes(ax)
-                ax.set_xlabel("Time")
-                ax.set(title="Scalogram")
-            else:
-                ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
-                fig.add_axes(ax)
-                # ax.get_xaxis().set_visible(False)
-                # ax.get_yaxis().set_visible(False)
-                ax.set_axis_off()
-                # fig.patch.set_visible(False)
-
-            ax.imshow(
-                20 * np.log10(np.abs(cs1)),
-                cmap=cmap,
-                aspect="auto",
-                norm=None,
-                vmax=0,
-                vmin=threshold,
-                extent=[0.0, len(d) / float(sr), cs1.shape[0], 0],
-            )
-
-        case "all":
-            fig, axes = plt.subplots(4, 1, figsize=(dim_w, dim_h * 2.5), sharex=False)
-            # fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
-            librosa.display.waveshow(y=d, sr=sr, ax=axes[0])
-
-            img = librosa.display.specshow(
-                S_db,
-                x_axis="time",
-                y_axis="mel",
-                sr=sr,
-                fmax=F_MAX,
-                cmap=cmap,
-                ax=axes[1],
-            )
-
-            cs1 = replace_zeroes(cs1)
-            axes[2].imshow(
-                20 * np.log10(np.abs(cs1)),
-                cmap=cmap,
-                aspect="auto",
-                norm=None,
-                vmax=0,
-                vmin=-60,
-                extent=[0.0, len(d) / float(sr), cs1.shape[0], 0],
-            )
-
-            xf, yf = fft_process(d, sr)
-            axes[3].plot(xf, np.abs(yf))
-
-            if show_scale:
-                axes[0].set(title="wave show")
-                axes[1].set(title="Mel-frequency spectrogram")
-                axes[2].set(title="Scalogram")
-                axes[3].set(title="FFT")
-                # axes[3].set_xlabel("Frequence")
-                # axes[3].set_ylabel("mag")
-
-            fig.subplots_adjust(hspace=0.5)
-
-    return fig
+    fig.subplots_adjust(hspace=0.5)
+    fig.savefig(out_fn)
 
 
 def plot_peaks(y, onset, peaks, sr: int):
