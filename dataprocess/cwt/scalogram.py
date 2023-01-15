@@ -73,6 +73,22 @@ def convert_dim_inch(t: str, w: float, h: float, dpi: int) -> Tuple[float, float
     return ow, oh
 
 
+def convert_dim_px(t: str, w: float, h: float, dpi: int) -> Tuple[float, float]:
+    ow = w
+    oh = h
+
+    match t:
+        case "cm":
+            cm = dpi / 2.54
+            ow = w * cm
+            oh = h * cm
+        case "inch":
+            ow = w * dpi
+            oh = h * dpi
+
+    return ow, oh
+
+
 def plot_waveshow(
     d,
     sr,
@@ -152,11 +168,11 @@ def plot_scalo(
     logger.debug(f"shape of f1: {f1.shape}")
 
     t, w, h = dim
-    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
 
     cs1 = replace_zeroes(cs1)
 
     if show_scale:
+        dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
         fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
         ax.set_xlabel("Time")
         ax.set(title="Scalogram")
@@ -172,7 +188,10 @@ def plot_scalo(
         fig.colorbar(img, ax=ax, format="%+2.0f dB")
         fig.savefig(out_fn)
     else:
-        img = img_resize(cs1, w=512, h=512, log=True, lthres=threshold, cmap=cmap)
+        dim_w, dim_h = convert_dim_px(t, w, h, dpi)
+        img = img_resize(
+            cs1, w=int(dim_w), h=int(dim_h), log=True, lthres=threshold, cmap=cmap
+        )
         cv2.imwrite(out_fn, img)
 
 
