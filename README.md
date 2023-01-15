@@ -39,6 +39,14 @@ for f in *.jpg; do mv $f "b$f"; done
 
 [Continuous Wavelet Transform and Scale-Based Analysis](https://www.mathworks.com/help/wavelet/gs/continuous-wavelet-transform-and-scale-based-analysis.html)
 
+## Spectrogram
+
+[Audio Deep Learning Made Simple - Why Mel Spectrograms perform better]
+(https://ketanhdoshi.github.io/Audio-Mel/)
+
+[Spectrograms, MFCCs, and Inversion in Python]
+(https://timsainburg.com/python-mel-compression-inversion.html)
+
 ## Librosa
 
 [Why resample on load?](https://librosa.org/blog/2019/07/17/resample-on-load/#resample-on-load)
@@ -64,6 +72,9 @@ for f in *.jpg; do mv $f "b$f"; done
 ## Kaggle
 
 [How To Download Dataset From Kaggle](https://www.ankushchoubey.com/download_kaggle/)
+
+[RFCX - Plot time-freq bbox on Log Mel spectrogram]
+(https://www.kaggle.com/code/lcolumbo/rfcx-plot-time-freq-bbox-on-log-mel-spectrogram)
 
 ## Sound processing
 

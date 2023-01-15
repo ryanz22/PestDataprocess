@@ -126,29 +126,50 @@ def plot_spectro(
     t, w, h = dim
     dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
 
-    fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
-    # fig = plt.figure(figsize=(dim_w, dim_h))
-
-    img = librosa.display.specshow(
-        # S_db, x_axis="time", y_axis="mel", sr=sr, fmax=F_MAX, cmap="jet", ax=ax
-        S_db,
-        x_axis="time" if show_scale else None,
-        y_axis="mel" if show_scale else None,
-        sr=sr,
-        fmax=F_MAX,
-        cmap=cmap,
-        ax=ax,
-        vmax=0,
-        vmin=threshold,
-    )
-
     if show_scale:
+        fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
+        # fig = plt.figure(figsize=(dim_w, dim_h))
+
+        img = librosa.display.specshow(
+            # S_db, x_axis="time", y_axis="mel", sr=sr, fmax=F_MAX, cmap="jet", ax=ax
+            S_db,
+            x_axis="time",
+            y_axis="mel",
+            sr=sr,
+            fmax=F_MAX,
+            cmap=cmap,
+            ax=ax,
+            vmax=0,
+            vmin=threshold,
+        )
+
         fig.colorbar(img, ax=ax, format="%+2.0f dB")
         ax.set(title="Mel-Frequency Spectrogram")
-    else:
-        ax.set_axis_off()
 
-    fig.savefig(out_fn)
+        fig.savefig(out_fn)
+    else:
+        fig = plt.figure(figsize=(dim_w, dim_h))
+        ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
+        ax.set_axis_off()
+        fig.add_axes(ax)
+        img = librosa.display.specshow(
+            S_db,
+            sr=sr,
+            fmax=F_MAX,
+            cmap=cmap,
+            ax=ax,
+            vmax=0,
+            vmin=threshold,
+        )
+        import matplotlib
+
+        # bbox = matplotlib.transforms.Bbox(((0, 0), (dim_w, dim_h)))
+        fig.savefig(out_fn, bbox_inches=0, pad_inches=0, dpi=dpi)
+        # dim_w, dim_h = convert_dim_px(t, w, h, dpi)
+        # img = img_resize(
+        #     S_db, w=int(dim_w), h=int(dim_h), log=False, lthres=threshold, cmap=cmap
+        # )
+        # cv2.imwrite(out_fn, img)
 
 
 def plot_scalo(

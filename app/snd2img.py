@@ -111,7 +111,10 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
 )
 @click.option("--threshold", type=int, default=-60, show_default=True)
 @click.option(
-    "--cmap", type=click.Choice(["jet", "magma"]), default="magma", show_default=True
+    "--cmap",
+    type=click.Choice(["jet", "magma", "gist_ncar"]),
+    default="magma",
+    show_default=True,
 )
 @click.option(
     "--dim",
