@@ -7,7 +7,7 @@ import librosa
 import librosa.display
 import cv2
 
-from dataprocess.cwt.cwt2 import rd_file, cwt3, cwt2, calc_scales, img_resize
+from dataprocess.cwt.cwt2 import cwt3, cwt2, calc_scales, img_resize
 from dataprocess.util.data_process import replace_zeroes
 from dataprocess.sound.filter_util import preproc_time_input
 
@@ -161,7 +161,8 @@ def plot_spectro(
             vmax=0,
             vmin=threshold,
         )
-        import matplotlib
+
+        # import matplotlib
 
         # bbox = matplotlib.transforms.Bbox(((0, 0), (dim_w, dim_h)))
         fig.savefig(out_fn, bbox_inches=0, pad_inches=0, dpi=dpi)
@@ -248,7 +249,7 @@ def plot_all(
     out_fn: str,
     threshold: int = -60,
     cmap: str = "magma",
-    dim=("inch", 10, 4),
+    dim=("inch", 10, 10),
     show_scale: bool = False,
     dpi: int = 256,
 ):
@@ -267,7 +268,7 @@ def plot_all(
 
     print(f"plot graph as {dim_w}inch x {dim_h}inch")
 
-    fig, axes = plt.subplots(4, 1, figsize=(dim_w, dim_h * 2.5), sharex=False)
+    fig, axes = plt.subplots(4, 1, figsize=(dim_w, dim_h), sharex=False)
     # fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
     librosa.display.waveshow(y=d, sr=sr, ax=axes[0])
 

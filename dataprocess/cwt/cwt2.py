@@ -5,7 +5,6 @@ import pandas as pd
 import librosa
 import scipy
 from scipy import signal
-from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import cv2
 from functools import partial
@@ -17,7 +16,7 @@ from datetime import timedelta
 
 # import ray
 import pywt
-from dataprocess.util.data_process import replace_zeroes
+from dataprocess.util.data_process import replace_zeroes, read_snd_file
 
 import logging
 
@@ -205,11 +204,11 @@ def scaleo_extract(
     logger.debug(f"threshold: {thres}, img_size: {img_size}")
 
     start = timer()
-    d, sr, dura = rd_file(filename, sr=sr)
+    d, sr, dura = read_snd_file(filename, sr=sr)
     logger.debug(f"scaleo_extract, data type: {d.dtype}")
 
     end = timer()
-    logger.debug(f"rd_file time: {timedelta(seconds=end-start)}")
+    logger.debug(f"read_snd_file time: {timedelta(seconds=end-start)}")
 
     start = timer()
     cs, _ = cwt2(d, nv=voices, sr=sr, low_freq=low_freq)  # wavelet transform
@@ -255,25 +254,6 @@ def scaleo_extract(
     logger.debug(f"img_resize, imwrite time: {timedelta(seconds=end-start)}")
 
     # return df
-
-
-def rd_file(
-    fname, sr: int = 22050, offset=0, duration=60
-) -> Tuple[NDArray, int, float]:
-    data, sr = librosa.load(
-        fname, sr=sr, mono=True, offset=offset, duration=duration, dtype=np.float32
-    )
-    logger.debug(f"data type: {data.dtype}")
-    # logger.debug(data[2000:2020])
-    mean = data.mean()
-    data = preprocessing.minmax_scale(data - mean, feature_range=(-1, 1))
-    # logger.debug(data[2000:2020])
-    duration = librosa.get_duration(y=data, sr=sr)
-    logger.debug(f"data size should be {duration * sr * 4}")
-    logger.debug(f"size of rd_file data: {data.size * data.itemsize}")
-
-    return data, sr, duration
-    # return data.astype(np.float16)
 
 
 # calculate variance of coefficients
@@ -339,11 +319,11 @@ def plot_sigx2(
                 20 * np.log10(Sxx),
                 shading="auto",
                 cmap=CMAP,
-                vmax=-60,
-                vmin=-60 - db_range,
+                vmax=0,
+                vmin=-db_range,
             )
         axes[i].set_title(name[i])
-    plt.show()
+    return fig
 
 
 def batch_extract(

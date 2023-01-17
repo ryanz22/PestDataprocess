@@ -101,6 +101,22 @@ very good with method=dwt
   -method=dwt -wavelet dmey2 -o tmp2.wav
 ```
 
+### Audio augmentation
+
+[A Python library for audio data augmentation. Inspired by albumentations. Useful for machine learning](https://github.com/iver56/audiomentations)
+
+[Scaper tutorial](https://scaper.readthedocs.io/en/latest/tutorial.html)
+
+[Scaper git repo](https://github.com/justinsalamon/scaper)
+
+[PyTorch audio data augmentation](https://pytorch.org/tutorials/beginner/audio_data_augmentation_tutorial.html)
+
+[Tensorflow audio data augmentation](https://www.tensorflow.org/io/tutorials/audio)
+
+[A Survey of Data Augmentation for Audio Classification](https://www.sba.org.br/cba2022/wp-content/uploads/artigos_cba2022/paper_5085.pdf)
+
+[Audio Data Augmentation in python](https://medium.com/@keur.plkar/audio-data-augmentation-in-python-a91600613e47)
+
 ## Image processing
 
 ### Split large image to small images
