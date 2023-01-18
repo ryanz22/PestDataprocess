@@ -11,9 +11,9 @@ echo "action: $action";
 echo "file: $file";
 echo "args: $args";
 
-for fn in $($file)
+$file | while read fn
 do 
-    $cmd = "$action $args $fn"
+    cmd="$action $args $fn"
 	echo $cmd
-	$($cmd)
+	$cmd
 done

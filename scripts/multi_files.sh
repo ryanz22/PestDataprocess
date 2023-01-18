@@ -13,8 +13,10 @@ echo "task: $task";
 echo "file: $file";
 echo "args: $args";
 
-for fn in $($file)
+$file | while read fn # read line by line instead of word by word
+#for fn in $($file)
 do 
-	echo "PYTHONPATH=. poetry run python $app $task $args $fn"
-	PYTHONPATH=. poetry run python $app $task $args $fn
+    cmd="PYTHONPATH=. poetry run python $app $task $args $fn"
+	echo $cmd
+	$cmd
 done
