@@ -10,6 +10,7 @@ import click
 import soundfile as sf
 import logging
 import functional as pyf
+import pydub
 
 from dataprocess.util.file import append_suffix, change_ext, check_create_folder
 from dataprocess.sound.audio_augment import augment_single
@@ -410,6 +411,40 @@ def augment(in_fn: str, bg: str, count: int, out: str):
     else:
         print(f"Augment input file: {in_fn}")
         augment_single(in_fn, count=count, bg=bg, out=out)
+
+
+@cli.command(
+    help="convert input sound file to requested format and output to the same location"
+)
+@click.option(
+    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=False)
+)
+@click.option(
+    "--from_type",
+    type=click.Choice(["mp3"]),
+    required=True,
+)
+@click.option(
+    "--to_type",
+    type=click.Choice(["wav"]),
+    required=True,
+)
+def convert(in_fn: str, from_type: str, to_type: str):
+    if from_type == to_type:
+        print("Same sound types and no need to convert")
+        return
+
+    out_fn = change_ext(in_fn, f".{to_type}")
+    match from_type:
+        case "mp3":
+            match to_type:
+                case "wav":
+                    sound = pydub.AudioSegment.from_mp3(in_fn)
+                    sound.export(out_fn, format=to_type)
+                case _:
+                    print(f"from {from_type} to {to_type} conversion is NOT supported")
+        case _:
+            print(f"from {from_type} to {to_type} conversion is NOT supported")
 
 
 if __name__ == "__main__":

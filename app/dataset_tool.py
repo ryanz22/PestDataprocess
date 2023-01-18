@@ -94,7 +94,7 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
         return
 
     result = [str(f) for f in pathlib.Path(in_dir).glob(f"**/*.{ext}")]
-    print(f'result:\n{result}')
+    print(f"result:\n{result}")
     if not result:
         print(f"failed to find *.{ext} in folder {in_dir}")
         return
@@ -120,7 +120,7 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
 
     copy_dir_only(in_dir, out_dir)
     resize_p = partial(resize, rwidth=width, rheight=height)
-    process_all(result, in_dir=in_dir, out_dir=out_dir, func=resize_p)
+    process_all(result, in_dir=in_dir, out_dir=out_dir, func=resize_p, out_ext="auto")
 
 
 @cli.command(help="plot all wave files recursively")
@@ -132,7 +132,9 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
 )
 @click.option("--ext", type=str, required=True)
 @click.option("--width", type=int, required=True, help="unit must be inch")
-@click.option("--dpi", type=int, required=True, help="width and dpi decide the image pixel")
+@click.option(
+    "--dpi", type=int, required=True, help="width and dpi decide the image pixel"
+)
 @click.option(
     "-t",
     "--ptype",
@@ -146,7 +148,7 @@ def plot_all_wav(in_dir: str, out_dir: str, ext: str, width: int, dpi: int, ptyp
         return
 
     result = [str(f) for f in pathlib.Path(in_dir).glob(f"**/*.{ext}")]
-    print(f'result:\n{result}')
+    print(f"result:\n{result}")
     if not result:
         print(f"failed to find *.{ext} in folder {in_dir}")
         return
@@ -156,20 +158,36 @@ def plot_all_wav(in_dir: str, out_dir: str, ext: str, width: int, dpi: int, ptyp
     def plot_sp(fn: str, ofn) -> str:
         d, sr, _ = read_snd_file(fn, sr=None, mono=False, scale=True)
         plot_spectro(d, sr, ofn, dim=("inch", width, width), dpi=224)
-        return f"resize {fn} to {ofn}"
+        return f"plot {fn} spectrogram to {ofn}"
 
     def plot_sc(fn: str, ofn) -> str:
         d, sr, _ = read_snd_file(fn, sr=None, mono=False, scale=True)
         plot_scalo(d, sr, ofn, dim=("inch", width, width), dpi=224)
-        return f"resize {fn} to {ofn}"
+        return f"plot {fn} scalogram to {ofn}"
 
     match ptype:
         case "spectrogram":
-            process_all(result, in_dir=in_dir, out_dir=out_dir, func=plot_sp, out_ext="png", processes=4, partition=4)
+            process_all(
+                result,
+                in_dir=in_dir,
+                out_dir=out_dir,
+                func=plot_sp,
+                out_ext="png",
+                processes=8,
+                partition=8,
+            )
         case "scalogram":
-            process_all(result, in_dir=in_dir, out_dir=out_dir, func=plot_sc, out_ext="png", processes=4, partition=4)
+            process_all(
+                result,
+                in_dir=in_dir,
+                out_dir=out_dir,
+                func=plot_sc,
+                out_ext="png",
+                processes=8,
+                partition=8,
+            )
         case _:
-            print(f'Unknown plot type: {ptype}')
+            print(f"Unknown plot type: {ptype}")
 
 
 if __name__ == "__main__":

@@ -41,6 +41,7 @@ ffmpeg-python = "^0.2.0"
 rembg = "^2.0.30"
 split-folders = "^0.5.1"
 audiomentations = "^0.28.0"
+pydub = "^0.25.1"
 
 [tool.poetry.dev-dependencies]
 

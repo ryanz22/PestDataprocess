@@ -74,8 +74,15 @@ def read_snd_file(
     # return data.astype(np.float16)
 
 
-def process_all(result: List[str], in_dir: str, out_dir: str, func: Callable[[str, str], str],
-                out_ext: str, processes: int = 8, partition: int = 100):
+def process_all(
+    result: List[str],
+    in_dir: str,
+    out_dir: str,
+    func: Callable[[str, str], str],
+    out_ext: str,
+    processes: int = 8,
+    partition: int = 100,
+):
     def inner_fn(fn, idir) -> str:
         if fn.startswith(idir):
             nfn = fn[len(idir) :]
@@ -85,10 +92,11 @@ def process_all(result: List[str], in_dir: str, out_dir: str, func: Callable[[st
         else:
             return f"error[inner_fn -> fn is not in idir]: fn {fn} idir {idir}"
 
-    def output_fn(fn: str, outdir: str) -> str:
+    def output_fn(fn: str, outdir: str, ext: str) -> str:
         p = pathlib.Path(outdir)
         nfn = str(pathlib.Path.joinpath(p, fn))
-        nfn = change_ext(nfn, f".{out_ext}")
+        if ext != "auto":
+            nfn = change_ext(nfn, f".{ext}")
         if not nfn.startswith(outdir):
             return f"error[output_fn -> fn is not in outdir]: fn {fn} outdir {outdir}"
 
@@ -100,7 +108,7 @@ def process_all(result: List[str], in_dir: str, out_dir: str, func: Callable[[st
     # print(f"out fn: {t2}")
     # resize(result[0], t2, 512, 0)
     p_inner = partial(inner_fn, idir=in_dir)
-    p_output_fn = partial(output_fn, outdir=out_dir)
+    p_output_fn = partial(output_fn, outdir=out_dir, ext=out_ext)
     inner_fn_list = functional.seq(result).map(p_inner).list()
     err = functional.seq(inner_fn_list).filter(lambda s: s.startswith("error"))
     if err.non_empty():
