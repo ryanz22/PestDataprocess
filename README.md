@@ -179,3 +179,11 @@ scripts/multi_files.sh -a 'app/snd_tool.py' -t 'single-slice' \
 -g '--length 5.0 --offset 0.2 -f' \
 -f 'ls data/sound/grasshopper-sound-4/*mono_44k_denoised.wav'
 ```
+
+[chmod recursively](https://phoenixnap.com/kb/chmod-recursive)
+
+```sh
+sudo find Example -type d -exec chmod 755 {} \;
+
+sudo find Example -type f -exec chmod 644 {} \;
+```

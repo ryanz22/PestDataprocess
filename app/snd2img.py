@@ -21,10 +21,6 @@ from dataprocess.util.file import change_ext, check_create_folder, append_suffix
 from dataprocess.sound.plot_wav import show_sources
 from dataprocess.sound.nussl import AudioSignal
 
-CMAP = "magma"
-SR = 22050
-TRAIN_DIR = "data/sound/cornell-birdcall/train_audio"
-
 
 @click.group()
 def cli():
@@ -47,6 +43,8 @@ def cli():
 @click.option("--threshold", type=int, default=-60)
 @click.option("--imgsize", type=int, default=256)
 def extract(in_dir: str, out_dir: str, threshold, imgsize):
+    TRAIN_DIR = "data/sound/cornell-birdcall/train_audio"
+
     check_create_folder(out_dir)
 
     flist = [

@@ -1,8 +1,12 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import Tuple
+from typing import Tuple, List, Callable
 import logging
 import librosa
+import pathlib
+from functools import partial
+import functional
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,3 +71,53 @@ def read_snd_file(
 
     return data, sr, duration
     # return data.astype(np.float16)
+
+
+def process_all(result: List[str], in_dir: str, out_dir: str, func: Callable[[str, str], str]):
+    def inner_fn(fn, idir) -> str:
+        if fn.startswith(idir):
+            nfn = fn[len(idir) :]
+            if nfn.startswith("/"):
+                nfn = nfn[1:]
+            return nfn
+        else:
+            return f"error[inner_fn -> fn is not in idir]: fn {fn} idir {idir}"
+
+    def output_fn(fn: str, outdir: str) -> str:
+        p = pathlib.Path(outdir)
+        nfn = str(pathlib.Path.joinpath(p, fn))
+        if not nfn.startswith(outdir):
+            return f"error[output_fn -> fn is not in outdir]: fn {fn} outdir {outdir}"
+
+        return nfn
+
+    # inner = inner_fn(result[0], in_dir)
+    # print(f"inner: {inner}")
+    # t2 = output_fn(inner, out_dir)
+    # print(f"out fn: {t2}")
+    # resize(result[0], t2, 512, 0)
+    p_inner = partial(inner_fn, idir=in_dir)
+    p_output_fn = partial(output_fn, outdir=out_dir)
+    inner_fn_list = functional.seq(result).map(p_inner).list()
+    err = functional.seq(inner_fn_list).filter(lambda s: s.startswith("error"))
+    if err.non_empty():
+        err.for_each(print)
+        return
+
+    out_fn_list = functional.seq(inner_fn_list).map(p_output_fn).list()
+    err2 = functional.seq(out_fn_list).filter(lambda s: s.startswith("error"))
+    if err2.non_empty():
+        err2.for_each(print)
+        return
+
+    fn_pair_list = functional.seq(result).zip(functional.seq(out_fn_list)).list()
+    print(fn_pair_list)
+    # processes=None, partition_size=None
+    # The following operations are run in parallel with more to be implemented
+    # in a future release:
+    #       map/select
+    #       filter/filter_not/where
+    #       flat_map
+    functional.pseq(fn_pair_list, processes=8, partition_size=100).map(
+        lambda t: func(t[0], t[1])
+    ).for_each(print)

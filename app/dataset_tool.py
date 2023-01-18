@@ -10,6 +10,9 @@ import logging
 import functional
 from functools import partial
 
+from dataprocess.util.file import copy_dir_only
+from dataprocess.util.data_process import process_all
+
 
 @click.group()
 def cli():
@@ -87,41 +90,12 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
 
     fp = f"{in_dir}/**/*.{ext}"
     print(f"search for {fp}")
-    result = glob.glob(fp)
+    result = [f for f in glob.glob(fp)]
     if not result:
         print(f"failed to find *.{ext} in folder {in_dir}")
         return
 
     import cv2
-
-    def copy_dir_only(idir: str, odir: str):
-        import shutil
-
-        # defining the function to ignore the files
-        # if present in any folder
-        def ignore_files(dir, files):
-            return [f for f in files if os.path.isfile(os.path.join(dir, f))]
-
-        # calling the shutil.copytree() method and
-        # passing the src,dst,and ignore parameter
-        shutil.copytree(idir, odir, ignore=ignore_files)
-
-    def inner_fn(fn, idir) -> str:
-        if fn.startswith(idir):
-            nfn = fn[len(idir) :]
-            if nfn.startswith("/"):
-                nfn = nfn[1:]
-            return nfn
-        else:
-            return f"error[inner_fn -> fn is not in idir]: fn {fn} idir {idir}"
-
-    def output_fn(fn: str, outdir: str) -> str:
-        p = pathlib.Path(outdir)
-        nfn = str(pathlib.Path.joinpath(p, fn))
-        if not nfn.startswith(outdir):
-            return f"error[output_fn -> fn is not in outdir]: fn {fn} outdir {outdir}"
-
-        return nfn
 
     def resize(fn: str, ofn: str, rwidth: int, rheight: int) -> str:
         img = cv2.imread(fn)
@@ -141,37 +115,33 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
         return f"resize {fn} to {ofn}"
 
     copy_dir_only(in_dir, out_dir)
+    resize_p = partial(resize, rwidth=width, rheight=height)
+    process_all(result, in_dir=in_dir, out_dir=out_dir, func=resize_p)
 
-    # inner = inner_fn(result[0], in_dir)
-    # print(f"inner: {inner}")
-    # t2 = output_fn(inner, out_dir)
-    # print(f"out fn: {t2}")
-    # resize(result[0], t2, 512, 0)
-    p_inner = partial(inner_fn, idir=in_dir)
-    p_output_fn = partial(output_fn, outdir=out_dir)
-    inner_fn_list = functional.seq(result).map(p_inner).list()
-    err = functional.seq(inner_fn_list).filter(lambda s: s.startswith("error"))
-    if err.non_empty():
-        err.for_each(print)
+
+
+@cli.command(help="plot all wave files recursively")
+@click.option(
+    "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option(
+    "-o", "--out_dir", required=True, type=click.Path(exists=False, dir_okay=True)
+)
+@click.option("--ext", type=str, required=True)
+@click.option("--width", type=int, required=True)
+@click.option("--height", type=int, default=0)
+def plot_all_wav(in_dir: str, out_dir: str, ext: str, width: int, height: int):
+    """Resize images recursively"""
+    if width <= 0 or height < 0:
+        print("width must > 0 and height must >= 0")
         return
 
-    out_fn_list = functional.seq(inner_fn_list).map(p_output_fn).list()
-    err2 = functional.seq(out_fn_list).filter(lambda s: s.startswith("error"))
-    if err2.non_empty():
-        err2.for_each(print)
+    fp = f"{in_dir}/**/*.{ext}"
+    print(f"search for {fp}")
+    result = glob.glob(fp)
+    if not result:
+        print(f"failed to find *.{ext} in folder {in_dir}")
         return
-
-    fn_pair_list = functional.seq(result).zip(functional.seq(out_fn_list)).list()
-    print(fn_pair_list)
-    # processes=None, partition_size=None
-    # The following operations are run in parallel with more to be implemented
-    # in a future release:
-    #       map/select
-    #       filter/filter_not/where
-    #       flat_map
-    functional.pseq(fn_pair_list, processes=8, partition_size=100).map(
-        lambda t: resize(t[0], t[1], width, height)
-    ).for_each(print)
 
 
 if __name__ == "__main__":
