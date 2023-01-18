@@ -7,6 +7,7 @@ import pathlib
 from functools import partial
 import functional
 
+from dataprocess.util.file import change_ext, check_create_folder, append_suffix
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,8 @@ def read_snd_file(
     # return data.astype(np.float16)
 
 
-def process_all(result: List[str], in_dir: str, out_dir: str, func: Callable[[str, str], str]):
+def process_all(result: List[str], in_dir: str, out_dir: str, func: Callable[[str, str], str],
+                out_ext: str, processes: int = 8, partition: int = 100):
     def inner_fn(fn, idir) -> str:
         if fn.startswith(idir):
             nfn = fn[len(idir) :]
@@ -86,6 +88,7 @@ def process_all(result: List[str], in_dir: str, out_dir: str, func: Callable[[st
     def output_fn(fn: str, outdir: str) -> str:
         p = pathlib.Path(outdir)
         nfn = str(pathlib.Path.joinpath(p, fn))
+        nfn = change_ext(nfn, f".{out_ext}")
         if not nfn.startswith(outdir):
             return f"error[output_fn -> fn is not in outdir]: fn {fn} outdir {outdir}"
 
@@ -118,6 +121,6 @@ def process_all(result: List[str], in_dir: str, out_dir: str, func: Callable[[st
     #       map/select
     #       filter/filter_not/where
     #       flat_map
-    functional.pseq(fn_pair_list, processes=8, partition_size=100).map(
+    functional.pseq(fn_pair_list, processes=processes, partition_size=partition).map(
         lambda t: func(t[0], t[1])
     ).for_each(print)

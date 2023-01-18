@@ -91,7 +91,7 @@ def convert_dim_px(t: str, w: float, h: float, dpi: int) -> Tuple[float, float]:
 
 def plot_waveshow(
     d,
-    sr,
+    sr: int,
     out_fn: str,
     dim=("inch", 10, 4),
     show_scale: bool = False,
@@ -111,7 +111,7 @@ def plot_waveshow(
 
 def plot_spectro(
     d,
-    sr,
+    sr: int,
     out_fn: str,
     threshold: int = -60,
     cmap: str = "magma",
@@ -175,7 +175,7 @@ def plot_spectro(
 
 def plot_scalo(
     d,
-    sr,
+    sr: int,
     out_fn: str,
     threshold: int = -60,
     cmap: str = "magma",
@@ -219,7 +219,7 @@ def plot_scalo(
 
 def plot_fft(
     d,
-    sr,
+    sr: int,
     out_fn: str,
     dim=("inch", 10, 4),
     show_scale: bool = False,

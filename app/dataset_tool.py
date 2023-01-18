@@ -12,6 +12,11 @@ from functools import partial
 
 from dataprocess.util.file import copy_dir_only
 from dataprocess.util.data_process import process_all
+from dataprocess.cwt.scalogram import (
+    plot_spectro,
+    plot_scalo,
+)
+from dataprocess.util.data_process import read_snd_file
 
 
 @click.group()
@@ -88,9 +93,8 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
         print("width must > 0 and height must >= 0")
         return
 
-    fp = f"{in_dir}/**/*.{ext}"
-    print(f"search for {fp}")
-    result = [f for f in glob.glob(fp)]
+    result = [str(f) for f in pathlib.Path(in_dir).glob(f"**/*.{ext}")]
+    print(f'result:\n{result}')
     if not result:
         print(f"failed to find *.{ext} in folder {in_dir}")
         return
@@ -119,7 +123,6 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
     process_all(result, in_dir=in_dir, out_dir=out_dir, func=resize_p)
 
 
-
 @cli.command(help="plot all wave files recursively")
 @click.option(
     "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
@@ -128,20 +131,45 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
     "-o", "--out_dir", required=True, type=click.Path(exists=False, dir_okay=True)
 )
 @click.option("--ext", type=str, required=True)
-@click.option("--width", type=int, required=True)
-@click.option("--height", type=int, default=0)
-def plot_all_wav(in_dir: str, out_dir: str, ext: str, width: int, height: int):
-    """Resize images recursively"""
-    if width <= 0 or height < 0:
-        print("width must > 0 and height must >= 0")
+@click.option("--width", type=int, required=True, help="unit must be inch")
+@click.option("--dpi", type=int, required=True, help="width and dpi decide the image pixel")
+@click.option(
+    "-t",
+    "--ptype",
+    type=click.Choice(["spectrogram", "scalogram"]),
+    required=True,
+)
+def plot_all_wav(in_dir: str, out_dir: str, ext: str, width: int, dpi: int, ptype: str):
+    """plot wave recursively"""
+    if width <= 0:
+        print("width must > 0")
         return
 
-    fp = f"{in_dir}/**/*.{ext}"
-    print(f"search for {fp}")
-    result = glob.glob(fp)
+    result = [str(f) for f in pathlib.Path(in_dir).glob(f"**/*.{ext}")]
+    print(f'result:\n{result}')
     if not result:
         print(f"failed to find *.{ext} in folder {in_dir}")
         return
+
+    copy_dir_only(in_dir, out_dir)
+
+    def plot_sp(fn: str, ofn) -> str:
+        d, sr, _ = read_snd_file(fn, sr=None, mono=False, scale=True)
+        plot_spectro(d, sr, ofn, dim=("inch", width, width), dpi=224)
+        return f"resize {fn} to {ofn}"
+
+    def plot_sc(fn: str, ofn) -> str:
+        d, sr, _ = read_snd_file(fn, sr=None, mono=False, scale=True)
+        plot_scalo(d, sr, ofn, dim=("inch", width, width), dpi=224)
+        return f"resize {fn} to {ofn}"
+
+    match ptype:
+        case "spectrogram":
+            process_all(result, in_dir=in_dir, out_dir=out_dir, func=plot_sp, out_ext="png", processes=4, partition=4)
+        case "scalogram":
+            process_all(result, in_dir=in_dir, out_dir=out_dir, func=plot_sc, out_ext="png", processes=4, partition=4)
+        case _:
+            print(f'Unknown plot type: {ptype}')
 
 
 if __name__ == "__main__":
