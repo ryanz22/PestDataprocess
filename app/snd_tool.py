@@ -21,8 +21,11 @@ from dataprocess.sound.preprocess import (
     resample as resam,
     is_stereo_sound,
     retrieve_clips,
+    find_peaks,
 )
 from dataprocess.sound.filter_util import load_audio_file, freq_filter
+from dataprocess.util.data_process import read_snd_file
+
 import warnings
 
 warnings.filterwarnings("ignore")  # get rid of librosa warnings
@@ -232,7 +235,7 @@ def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
     "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=False)
 )
 @click.option("--sr", type=int, required=False)
-@click.option("--back", type=float, required=True, default=0.5)
+@click.option("--back", type=float, required=True, default=0.2)
 @click.option("--forth", type=float, required=True, default=2.0)
 @click.option(
     "--out_dir", required=True, type=click.Path(exists=False, file_okay=False)
@@ -240,26 +243,14 @@ def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
 def peaks(in_fn: str, sr: int, back: float, forth: float, out_dir: str):
     print(f"sr: {sr}")
     if sr is None:
-        y, sr = librosa.load(in_fn, sr=None, mono=True)
+        y, sr, dura = read_snd_file(in_fn, sr=None, mono=True, scale=True)
     else:
-        y, _ = librosa.load(in_fn, sr=sr, mono=True)
+        y, _, dura = read_snd_file(in_fn, sr=sr, mono=True, scale=True)
 
-    print(f"sr: {sr}")
-    onset = librosa.onset.onset_strength(
-        y=y,
-        sr=sr,
-        # hop_length=1024,
-        # aggregate=np.median
-    )
-    # print(f'number count onset_env len {len(onset_env_nc)}:\n{onset_env_nc}')
+    print(f"y.shape: {y.shape}, sr: {sr}, daration: {dura}")
 
-    # onset_nc = librosa.onset.onset_detect(y=slices[0], sr=sr2, units='time')
-    # print(f'number count onset detect len {len(onset_nc)}:\n{onset_nc}')
-
-    peaks_l = librosa.util.peak_pick(
-        onset, pre_max=3, post_max=3, pre_avg=3, post_avg=5, delta=0.8, wait=10
-    )
-    clips = retrieve_clips(fn=in_fn, sr=sr, peaks=peaks_l, back=back, forth=forth)
+    peaks_l = find_peaks(y, sr)
+    clips = retrieve_clips(y, sr, dura, peaks=peaks_l, back=back, forth=forth)
 
     out_path = check_create_folder(out_dir)
 
@@ -463,6 +454,7 @@ if __name__ == "__main__":
     ch.setFormatter(logging.Formatter(l_fmt))
     logger = logging.getLogger("dataprocess")
     logger.addHandler(ch)
-    logger.setLevel(logging.ERROR)
+    # logger.setLevel(logging.ERROR)
+    logger.setLevel(logging.DEBUG)
 
     cli()

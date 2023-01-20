@@ -75,31 +75,57 @@ def sound_file_info(fn: str) -> Dict:
 
 
 def retrieve_clips(
-    fn: str, peaks, sr: int = None, back: float = 0.5, forth: float = 1.5
+    y, sr: int, dura: float, peaks, back: float = 0.2, forth: float = 2.0
 ):
-    y, sr = librosa.load(fn, sr=sr)
-    dura = librosa.get_duration(y=y, sr=sr)
     cur_pos = 0.0
     clips = []
-    onset_times = librosa.frames_to_time(peaks)
+    onset_times = librosa.frames_to_time(peaks, sr=sr)
     logger.debug(f"onset times:\n{onset_times}")
 
     for i in onset_times:
         logger.debug(f"onset time: {i}")
         if i > cur_pos and i <= dura:
             logger.debug(f"cur_pos at loop begin: {cur_pos}")
-            off = round(i) - back
+            off = i - back
             logger.debug(f"offset before adjust: {off}")
             off = off if off > 0 else 0
             logger.debug(f"offset after adjust: {off}")
-            sub_1, _ = librosa.load(fn, sr=sr, offset=off, duration=forth)
-            t_dura = librosa.get_duration(sub_1, sr)
+            # sub_1, _ = librosa.load(fn, sr=sr, offset=off, duration=forth)
+            start = off * sr
+            end = (off + forth) * sr
+            end = end if end <= len(y) else len(y)
+            sub_1 = y[int(start) : int(end)]
+            t_dura = len(sub_1) / sr
             if t_dura < forth:
                 sub_1 = data_process.fill_fix_len(sub_1, sr, forth)
             clips.append(sub_1)
             cur_pos = off + forth
             logger.debug(f"cur_pos at loop end: {cur_pos}")
         else:
-            logger.debug("bypass, too close")
+            logger.debug(
+                f"bypass, covered by previous pick, i: {i}, cur_pos: {cur_pos}, dura: {dura}"
+            )
 
     return clips
+
+
+def find_peaks(y, sr: int):
+    onset = librosa.onset.onset_strength(
+        y=y,
+        sr=sr,
+        # hop_length=1024,
+        # aggregate=np.median
+    )
+    logger.debug(f"number count onset_env len {len(onset)}")
+
+    # onset_nc = librosa.onset.onset_detect(y=slices[0], sr=sr2, units='time')
+    # print(f'number count onset detect len {len(onset_nc)}:\n{onset_nc}')
+
+    peaks_l = librosa.util.peak_pick(
+        onset, pre_max=3, post_max=3, pre_avg=3, post_avg=5, delta=0.8, wait=10
+    )
+    logger.debug(f"found {len(peaks_l)} peaks")
+    onset_times = librosa.frames_to_time(peaks_l, sr=sr)
+    logger.debug(onset_times)
+
+    return peaks_l
