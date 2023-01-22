@@ -5,7 +5,11 @@ from typing import Dict, Tuple
 from numpy.typing import NDArray
 import wave
 import logging
+import soundfile as sf
+
 from dataprocess.util import data_process
+from dataprocess.util.file import append_suffix, change_ext, check_create_folder
+from dataprocess.util.data_process import read_snd_file
 
 logger = logging.getLogger(__name__)
 
@@ -28,14 +32,19 @@ def to_mono(y: NDArray, sr: int) -> Tuple[NDArray, int]:
         logger.debug("this is a stereo sound track")
         y_mono = librosa.to_mono(y)
         logger.debug(f"after to mono, shape: {y_mono.shape}")
-    return y_mono, sr
+        return y_mono, sr
+    else:
+        return y, sr
 
 
 def resample(data: NDArray, sr: int, tsr: int) -> Tuple[NDArray, int]:
-    y = librosa.resample(data, sr, tsr)
-    logger.debug(f"shape: {y.shape}")
-    logger.debug(f"rate from {sr} to {tsr}")
-    return y, tsr
+    if sr != tsr:
+        y = librosa.resample(data, sr, tsr)
+        logger.debug(f"shape: {y.shape}")
+        logger.debug(f"rate from {sr} to {tsr}")
+        return y, tsr
+    else:
+        return data, sr
 
 
 def is_stereo(y: NDArray) -> bool:
@@ -97,6 +106,7 @@ def retrieve_clips(
             sub_1 = y[int(start) : int(end)]
             t_dura = len(sub_1) / sr
             if t_dura < forth:
+                logger.debug(f"padding: t_dura {t_dura}, forth {forth}")
                 sub_1 = data_process.fill_fix_len(sub_1, sr, forth)
             clips.append(sub_1)
             cur_pos = off + forth
@@ -129,3 +139,34 @@ def find_peaks(y, sr: int):
     logger.debug(onset_times)
 
     return peaks_l
+
+
+def snd_peaks(in_fn: str, sr: int, back: float, forth: float, out_dir: str):
+    print(f"sr: {sr}")
+    if sr is None:
+        y, sr, dura = read_snd_file(in_fn, sr=None, mono=True, scale=True)
+    else:
+        y, _, dura = read_snd_file(in_fn, sr=sr, mono=True, scale=True)
+
+    print(f"y.shape: {y.shape}, sr: {sr}, daration: {dura}")
+
+    peaks_l = find_peaks(y, sr)
+    clips = retrieve_clips(y, sr, dura, peaks=peaks_l, back=back, forth=forth)
+
+    out_path = check_create_folder(out_dir)
+
+    tmp_fn = pathlib.Path(in_fn).name
+    for i, c in enumerate(clips):
+        out_fn = append_suffix(tmp_fn, str(i))
+        if pathlib.Path(tmp_fn).suffix != ".wav":
+            out_fn = change_ext(out_fn, ".wav")
+
+        sf.write(out_path / out_fn, c, sr)
+
+
+def normalize(y, sr: int, tsr: int) -> Tuple[NDArray, int]:
+    y2, sr2 = to_mono(y, sr)
+    y3, sr3 = resample(y, sr2, tsr)
+    y4, sr4 = denoise(y3, sr3)
+
+    return y4, sr4

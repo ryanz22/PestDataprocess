@@ -17,11 +17,11 @@ from dataprocess.sound.audio_augment import augment_single
 from dataprocess.sound.preprocess import (
     denoise as deno,
     to_mono,
+    normalize as norm,
     sound_file_info,
     resample as resam,
     is_stereo_sound,
-    retrieve_clips,
-    find_peaks,
+    snd_peaks,
 )
 from dataprocess.sound.filter_util import load_audio_file, freq_filter
 from dataprocess.util.data_process import read_snd_file
@@ -74,12 +74,14 @@ def mono(in_fn: str):
     type=click.Path(exists=True, dir_okay=False),
     help="convert any types of sound to mono 22050 wav",
 )
-def normalize(in_fn: str):
-    data, sr = librosa.load(in_fn, sr=22050, mono=True)
+@click.option("-t", "--tsr", default=22050)
+def normalize(in_fn: str, tsr: int):
+    data, sr = librosa.load(in_fn, sr=None, mono=True)
+    data2, sr2 = norm(data, sr, tsr)
     out_fn = append_suffix(in_fn, "mono_22050")
     if pathlib.Path(in_fn).suffix != ".wav":
         out_fn = change_ext(out_fn, ".wav")
-    sf.write(out_fn, data, sr)
+    sf.write(out_fn, data2, sr2)
 
 
 @cli.command(help="resample input sound file and output to the same location")
@@ -241,26 +243,7 @@ def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
     "--out_dir", required=True, type=click.Path(exists=False, file_okay=False)
 )
 def peaks(in_fn: str, sr: int, back: float, forth: float, out_dir: str):
-    print(f"sr: {sr}")
-    if sr is None:
-        y, sr, dura = read_snd_file(in_fn, sr=None, mono=True, scale=True)
-    else:
-        y, _, dura = read_snd_file(in_fn, sr=sr, mono=True, scale=True)
-
-    print(f"y.shape: {y.shape}, sr: {sr}, daration: {dura}")
-
-    peaks_l = find_peaks(y, sr)
-    clips = retrieve_clips(y, sr, dura, peaks=peaks_l, back=back, forth=forth)
-
-    out_path = check_create_folder(out_dir)
-
-    tmp_fn = pathlib.Path(in_fn).name
-    for i, c in enumerate(clips):
-        out_fn = append_suffix(tmp_fn, str(i))
-        if pathlib.Path(tmp_fn).suffix != ".wav":
-            out_fn = change_ext(out_fn, ".wav")
-
-        sf.write(out_path / out_fn, c, sr)
+    snd_peaks(in_fn, sr=sr, back=back, forth=forth, out_dir=out_dir)
 
 
 @cli.command(help="stretch the sound file or folder to output folder")
