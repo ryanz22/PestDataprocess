@@ -1,22 +1,30 @@
 import os
 import sys
-import glob
 import pathlib
 import numpy as np
 import pprint
 from typing import Tuple, List
 import click
 import logging
-import functional
+import functional as pyf
+import shutil
+import soundfile as sf
 from functools import partial
 
-from dataprocess.util.file import copy_dir_only
-from dataprocess.util.data_process import process_all
+from dataprocess.util.file import (
+    copy_dir_only,
+    check_create_folder,
+    change_ext,
+    append_suffix,
+)
+from dataprocess.util.data_process import process_all, xeno_canto_meta
 from dataprocess.cwt.scalogram import (
     plot_spectro,
     plot_scalo,
 )
 from dataprocess.util.data_process import read_snd_file
+
+from dataprocess.sound.preprocess import snd_peaks, normalize
 
 
 @click.group()
@@ -188,6 +196,101 @@ def plot_all_wav(in_dir: str, out_dir: str, ext: str, width: int, dpi: int, ptyp
             )
         case _:
             print(f"Unknown plot type: {ptype}")
+
+
+@cli.command(help="Processing xeno-canto sound peaks recursively")
+@click.option(
+    "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option(
+    "-o", "--out_dir", required=True, type=click.Path(exists=False, dir_okay=True)
+)
+@click.option("--sr", type=int, required=True)
+@click.option("--back", type=float, required=True, default=0.2)
+@click.option("--forth", type=float, required=True, default=2.0)
+def xeno_canto_peaks(in_dir: str, out_dir: str, sr: int, back: float, forth: float):
+    result = [str(f) for f in pathlib.Path(in_dir).glob(f"**/*.wav")]
+    print(f"result:\n{result}")
+    if not result:
+        print(f"failed to find *.wav in folder {in_dir}")
+        return
+
+    copy_dir_only(in_dir, out_dir)
+
+    def process_peaks(fn: str, od: str, back: float, forth: float) -> str:
+        snd_peaks(fn, sr=sr, back=back, forth=forth, out_dir=od)
+        return f"find peaks in {fn} and output to {od}"
+
+    peaks_f = partial(process_peaks, back=back, forth=forth)
+    process_all(result, in_dir=in_dir, out_dir=out_dir, func=peaks_f, out_ext="dir")
+
+
+@cli.command(help="Normalizing xeno-canto sound recursively")
+@click.option(
+    "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option(
+    "-o", "--out_dir", required=True, type=click.Path(exists=False, dir_okay=True)
+)
+@click.option("--sr", type=int, required=True)
+@click.option("--tsr", type=int, required=True)
+def xeno_canto_normalize(in_dir: str, out_dir: str, sr: int, tsr: int):
+    meta_dsn_list = xeno_canto_meta(in_dir)
+    if isinstance(meta_dsn_list, str):
+        print(meta_dsn_list)
+        return
+
+    # print(meta_dsn_list)
+    print_f = lambda t: print(f"{t[0].name}\t\t{t[1]}")
+    print(f"meta file to dataset name:\n")
+    pyf.seq(meta_dsn_list).for_each(print_f)
+
+    o_dir_p = check_create_folder(out_dir)
+    # create subfoloders
+    pyf.seq(meta_dsn_list).for_each(lambda t: check_create_folder(str(o_dir_p / t[1])))
+
+    read_snd = lambda p: read_snd_file(str(p), sr=sr, mono=True, scale=False)
+
+    norm_p = partial(normalize, tsr=tsr)
+
+    def write_wav(infp: pathlib.Path, od: pathlib.Path, y, sr: int) -> str:
+        # print(f"in file path: {infp}")
+        # print(f"out dir: {od}")
+
+        out_fn = append_suffix(str(od / infp.name), "mono")
+        if infp.suffix != ".wav":
+            out_fn = change_ext(out_fn, ".wav")
+        sf.write(out_fn, y, sr)
+        return f"normalize {infp} and save to {od}"
+
+    def normalize_batch(pl: List[pathlib.Path], out_d: pathlib.Path) -> List[str]:
+        # print(f"in files: {pl}")
+        # print(f"out dir: {out_d}")
+        write_wav_f = partial(write_wav, od=out_d)
+
+        y_sr_l = pyf.seq(pl).map(read_snd).map(lambda t: norm_p(t[0], t[1])).list()
+        # print(f"y_sr_l:\n{y_sr_l[:2]}")
+
+        ret = (
+            pyf.seq(y_sr_l)
+            .zip(pyf.seq(pl))
+            .map(lambda t: write_wav_f(t[1], y=t[0][0], sr=t[0][1]))
+        )
+        return ret
+
+    result = (
+        pyf.seq(meta_dsn_list)
+        .map(lambda t: (fetch_sound_files(t[0]), t[1]))
+        .map(lambda t: normalize_batch(t[0], o_dir_p / t[1]))
+        .list()
+    )
+    print(f"result:\n")
+    pyf.seq(result).for_each(print)
+
+
+def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
+    ext = [".wav", ".mp3"]
+    return list(filter(lambda p: p.suffix in ext, p.parent.glob("**/*")))
 
 
 if __name__ == "__main__":

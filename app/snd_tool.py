@@ -17,12 +17,15 @@ from dataprocess.sound.audio_augment import augment_single
 from dataprocess.sound.preprocess import (
     denoise as deno,
     to_mono,
+    normalize as norm,
     sound_file_info,
     resample as resam,
     is_stereo_sound,
-    retrieve_clips,
+    snd_peaks,
 )
 from dataprocess.sound.filter_util import load_audio_file, freq_filter
+from dataprocess.util.data_process import read_snd_file
+
 import warnings
 
 warnings.filterwarnings("ignore")  # get rid of librosa warnings
@@ -71,12 +74,14 @@ def mono(in_fn: str):
     type=click.Path(exists=True, dir_okay=False),
     help="convert any types of sound to mono 22050 wav",
 )
-def normalize(in_fn: str):
-    data, sr = librosa.load(in_fn, sr=22050, mono=True)
+@click.option("-t", "--tsr", default=22050)
+def normalize(in_fn: str, tsr: int):
+    data, sr = librosa.load(in_fn, sr=None, mono=True)
+    data2, sr2 = norm(data, sr, tsr)
     out_fn = append_suffix(in_fn, "mono_22050")
     if pathlib.Path(in_fn).suffix != ".wav":
         out_fn = change_ext(out_fn, ".wav")
-    sf.write(out_fn, data, sr)
+    sf.write(out_fn, data2, sr2)
 
 
 @cli.command(help="resample input sound file and output to the same location")
@@ -232,44 +237,13 @@ def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
     "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=False)
 )
 @click.option("--sr", type=int, required=False)
-@click.option("--back", type=float, required=True, default=0.5)
+@click.option("--back", type=float, required=True, default=0.2)
 @click.option("--forth", type=float, required=True, default=2.0)
 @click.option(
     "--out_dir", required=True, type=click.Path(exists=False, file_okay=False)
 )
 def peaks(in_fn: str, sr: int, back: float, forth: float, out_dir: str):
-    print(f"sr: {sr}")
-    if sr is None:
-        y, sr = librosa.load(in_fn, sr=None, mono=True)
-    else:
-        y, _ = librosa.load(in_fn, sr=sr, mono=True)
-
-    print(f"sr: {sr}")
-    onset = librosa.onset.onset_strength(
-        y=y,
-        sr=sr,
-        # hop_length=1024,
-        # aggregate=np.median
-    )
-    # print(f'number count onset_env len {len(onset_env_nc)}:\n{onset_env_nc}')
-
-    # onset_nc = librosa.onset.onset_detect(y=slices[0], sr=sr2, units='time')
-    # print(f'number count onset detect len {len(onset_nc)}:\n{onset_nc}')
-
-    peaks_l = librosa.util.peak_pick(
-        onset, pre_max=3, post_max=3, pre_avg=3, post_avg=5, delta=0.8, wait=10
-    )
-    clips = retrieve_clips(fn=in_fn, sr=sr, peaks=peaks_l, back=back, forth=forth)
-
-    out_path = check_create_folder(out_dir)
-
-    tmp_fn = pathlib.Path(in_fn).name
-    for i, c in enumerate(clips):
-        out_fn = append_suffix(tmp_fn, str(i))
-        if pathlib.Path(tmp_fn).suffix != ".wav":
-            out_fn = change_ext(out_fn, ".wav")
-
-        sf.write(out_path / out_fn, c, sr)
+    snd_peaks(in_fn, sr=sr, back=back, forth=forth, out_dir=out_dir)
 
 
 @cli.command(help="stretch the sound file or folder to output folder")
@@ -463,6 +437,7 @@ if __name__ == "__main__":
     ch.setFormatter(logging.Formatter(l_fmt))
     logger = logging.getLogger("dataprocess")
     logger.addHandler(ch)
-    logger.setLevel(logging.ERROR)
+    # logger.setLevel(logging.ERROR)
+    logger.setLevel(logging.DEBUG)
 
     cli()

@@ -5,7 +5,8 @@ import logging
 import librosa
 import pathlib
 from functools import partial
-import functional
+import functional as pyf
+import yaml
 
 from dataprocess.util.file import change_ext, check_create_folder, append_suffix
 
@@ -23,9 +24,7 @@ def replace_zeroes(data):
 def fill_fix_len(y: NDArray, sr: int, dura: float):
     tlen = librosa.get_duration(y=y, sr=sr)
     if tlen < dura:
-        fill_len = int((dura - tlen) * sr)
-        a = np.empty(fill_len)
-        return np.append(y, a)
+        return librosa.util.fix_length(y, size=int(sr * dura))
     else:
         return y
 
@@ -52,7 +51,7 @@ def read_snd_file(
     Returns:
         Tuple[NDArray, int, float]: _description_
     """
-    print(
+    logger.debug(
         f"load {fname} sr: {sr} offset: {offset} duration: {duration} mono: {mono} scale: {scale}"
     )
     data, sr = librosa.load(
@@ -84,6 +83,9 @@ def process_all(
     partition: int = 100,
 ):
     def inner_fn(fn, idir) -> str:
+        """given idir is /test and fn is  /test/sub_1/file_1
+        inner_fn will return sub_1/file_1
+        """
         if fn.startswith(idir):
             nfn = fn[len(idir) :]
             if nfn.startswith("/"):
@@ -94,13 +96,19 @@ def process_all(
 
     def output_fn(fn: str, outdir: str, ext: str) -> str:
         p = pathlib.Path(outdir)
-        nfn = str(pathlib.Path.joinpath(p, fn))
-        if ext != "auto":
-            nfn = change_ext(nfn, f".{ext}")
-        if not nfn.startswith(outdir):
+        nfn = pathlib.Path.joinpath(p, fn)
+        match ext:
+            case "dir":  # like peaks, single input to multiple output in a folder
+                nfn = nfn.parent
+            case "auto":  # no need todo anything
+                pass
+            case _:  # like wav
+                nfn = change_ext(str(nfn), f".{ext}")
+
+        if not str(nfn).startswith(outdir):
             return f"error[output_fn -> fn is not in outdir]: fn {fn} outdir {outdir}"
 
-        return nfn
+        return str(nfn)
 
     # inner = inner_fn(result[0], in_dir)
     # print(f"inner: {inner}")
@@ -109,19 +117,19 @@ def process_all(
     # resize(result[0], t2, 512, 0)
     p_inner = partial(inner_fn, idir=in_dir)
     p_output_fn = partial(output_fn, outdir=out_dir, ext=out_ext)
-    inner_fn_list = functional.seq(result).map(p_inner).list()
-    err = functional.seq(inner_fn_list).filter(lambda s: s.startswith("error"))
+    inner_fn_list = pyf.seq(result).map(p_inner).list()
+    err = pyf.seq(inner_fn_list).filter(lambda s: s.startswith("error"))
     if err.non_empty():
         err.for_each(print)
         return
 
-    out_fn_list = functional.seq(inner_fn_list).map(p_output_fn).list()
-    err2 = functional.seq(out_fn_list).filter(lambda s: s.startswith("error"))
+    out_fn_list = pyf.seq(inner_fn_list).map(p_output_fn).list()
+    err2 = pyf.seq(out_fn_list).filter(lambda s: s.startswith("error"))
     if err2.non_empty():
         err2.for_each(print)
         return
 
-    fn_pair_list = functional.seq(result).zip(functional.seq(out_fn_list)).list()
+    fn_pair_list = pyf.seq(result).zip(pyf.seq(out_fn_list)).list()
     print(fn_pair_list)
     # processes=None, partition_size=None
     # The following operations are run in parallel with more to be implemented
@@ -129,6 +137,28 @@ def process_all(
     #       map/select
     #       filter/filter_not/where
     #       flat_map
-    functional.pseq(fn_pair_list, processes=processes, partition_size=partition).map(
+    pyf.pseq(fn_pair_list, processes=processes, partition_size=partition).map(
         lambda t: func(t[0], t[1])
     ).for_each(print)
+
+
+def xeno_canto_meta(in_dir: str) -> List[Tuple[pathlib.Path, str]] | str:
+    meta_files = [f for f in pathlib.Path(in_dir).glob(f"**/meta.yaml")]
+    if not meta_files:
+        return f"failed to find meta.yaml in folder {in_dir}"
+    logger.debug(f"meta files:\n{meta_files}")
+
+    def get_ds_name(fn: str) -> str:
+        with open(fn, "r") as f:
+            yml = yaml.safe_load(f)
+            return yml["dataset name"]
+
+    ds_names = pyf.seq(meta_files).map(get_ds_name).list()
+    print(f"dataset name:\n{ds_names}")
+    dup_ds_names = pyf.seq(ds_names).distinct().list()
+    if len(dup_ds_names) != len(ds_names):
+        return f"there are duplicate dataset names:\n{ds_names}\n{dup_ds_names}"
+
+    meta_dsn_list = pyf.seq(meta_files).zip(pyf.seq(ds_names)).list()
+
+    return meta_dsn_list

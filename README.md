@@ -166,6 +166,46 @@ Bugguide: https://bugguide.net/node/view/151116
 
 [Avosound grasshopper](https://www.avosound.com/en-us/sound-effects/animal/grasshopper/)
 
+### Project datasets
+
+grasshopper-raw-ds: original dataset contains the sound files have been mono, resample(44100), denoised, peak found.
+
+```sh
+PYTHONPATH=. poetry run python app/dataset_tool.py \
+ xeno-canto-normalize -i data/sound/xeno-canto-acrididae/ \
+ -o ~/tmp/xeno-normal --sr 44100 --tsr 44100
+```
+
+```sh
+PYTHONPATH=. poetry run python app/dataset_tool.py \
+ xeno-canto-peaks -i ~/tmp/xeno-normal/ \
+ -o ~/tmp/xeno-peaks --sr 44100
+```
+
+grasshopper_aug_ds: augment from grasshopper-raw-ds
+
+```sh
+PYTHONPATH=. poetry run python app/snd_tool.py augment \
+ -i data/sound/grasshopper-raw-ds/gh-7/ \
+ -o data/sound/grasshopper_aug_ds/gh-7 \
+ -b data/sound/background_sounds/mono_5s/ -c 6
+```
+
+grasshopper-train-ds: train/val/test split from grasshopper_aug_ds
+
+```sh
+PYTHONPATH=. poetry run python app/dataset_tool.py split-folders \
+ -i ~/tmp/xeno-peaks/ -o ~/tmp/xeno-train-ds
+```
+
+gh-cwt-plot-ds: cwt plot from grasshopper-train-ds
+
+```sh
+PYTHONPATH=. poetry run python app/dataset_tool.py \
+  plot-all-wav -i ~/tmp/xeno-train-ds/ -o ~/tmp/xeno-ds_plot \
+  --ext wav --width 1 --dpi 224 -t scalogram
+```
+
 ## Shell script
 
 [How To Use bash For Loop In One Line](https://www.cyberciti.biz/faq/linux-unix-bash-for-loop-one-line-command/)

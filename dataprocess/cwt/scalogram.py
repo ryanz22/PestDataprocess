@@ -195,7 +195,7 @@ def plot_scalo(
 
     if show_scale:
         dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
-        fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
+        fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h), dpi=dpi)
         ax.set_xlabel("Time")
         ax.set(title="Scalogram")
         img = ax.imshow(
