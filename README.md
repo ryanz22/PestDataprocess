@@ -168,6 +168,8 @@ Bugguide: https://bugguide.net/node/view/151116
 
 ### Project datasets
 
+xeno-canto-acrididae: the download from xeno-canto and its meta data
+
 grasshopper-raw-ds: original dataset contains the sound files have been mono, resample(44100), denoised, peak found.
 
 ```sh
