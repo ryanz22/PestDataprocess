@@ -421,6 +421,45 @@ def convert(in_fn: str, from_type: str, to_type: str):
             print(f"from {from_type} to {to_type} conversion is NOT supported")
 
 
+@cli.command(help="given a signal wav and a noise wav, calculate the SnR")
+@click.option(
+    "-s", "--signal", required=True, type=click.Path(exists=True, dir_okay=False)
+)
+@click.option(
+    "-n", "--noise", required=True, type=click.Path(exists=True, dir_okay=False)
+)
+def snr(signal: str, noise: str):
+    print("Please make the sound tracks provided has the sound you want to calculate")
+    import scipy.io.wavfile as wavfile
+
+    # Load the audio file
+    signal_sr, signal_y = wavfile.read(signal)
+    noise_sr, noise_y = wavfile.read(noise)
+
+    if signal_sr != noise_sr:
+        print(
+            f"signal wav sr [{signal_sr}] is different from noise wav sr [{noise_sr}]"
+        )
+        return
+
+    if len(signal_y) != len(noise_y):
+        print("two wav files must have the equal length")
+        return
+
+    # Calculate the RMS value of the noise
+    noise_rms = np.sqrt(np.mean(noise_y**2))
+
+    # Calculate the RMS value of the signal
+    signal_rms = np.sqrt(np.mean(signal_y**2))
+
+    # Calculate the SNR in dB
+    snr = 20 * np.log10(signal_rms / noise_rms)
+    if snr < 0.0:
+        print("Please check if the wav files have the sound and equal length")
+    else:
+        print(f"snr is {snr}")
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
