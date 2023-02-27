@@ -14,7 +14,11 @@ sudo apt install libcairo2-dev libsndfile-dev gobject-introspection libgireposit
 ## Macbook env setup
 
 ```sh
-brew install cairo gobject-introspection libsndfile
+brew install cairo gobject-introspection libsndfile sox
+
+sudo ln -s /opt/homebrew/include/sox.h /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk/usr/include/sox.h
+
+sudo ln -s /opt/homebrew/lib/libsox.a /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk/usr/lib/libsox.a
 ```
 
 ### How to run
