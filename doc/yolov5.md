@@ -169,13 +169,13 @@ Initial training with grasshopper drone image dataset based on a pretrained yolo
 
 ```shell
 python train.py --img 512 --batch 32 --epochs 100 --data gh-bugs.yaml \
---weights yolov5l.pt --freeze 10 --project yolv5l --name gh-bugs
+--weights yolov5l.pt --freeze 10 --project yolov5l --name gh-bugs
 ```
 
 Continues training based on previous best weights
 
 ```shell
-python train.py --weights yolov5l/gh-bugs/weights/best.pt \
+python train.py --weights yolov5-obj/gh-bugs/weights/best.pt \
 --data gh-bugs.yaml --project yolov5l --name gh-bugs --img 512 \
 --epoch 20 --batch-size 128 --cache
 ```
