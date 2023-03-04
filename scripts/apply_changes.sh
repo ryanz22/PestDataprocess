@@ -1,4 +1,5 @@
 #!/bin/bash
+# ./apply_changes.sh -a ls -f "ls *.sh" -g "-l"
 while getopts a:f:g: flag
 do
     case "${flag}" in
