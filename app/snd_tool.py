@@ -302,12 +302,26 @@ def stretch(in_fn: str, in_dir: str, rate: float, out_dir: str):
 @click.option(
     "-f",
     "--in_fn",
-    type=click.Path(exists=True, dir_okay=False),
+    type=click.Path(exists=True, dir_okay=True),
+    required=True,
 )
-def to_wav(in_fn: str):
-    y, sr = librosa.load(in_fn, sr=None, mono=True)
-    out_fn = change_ext(in_fn, ".wav")
-    sf.write(out_fn, y, sr)
+@click.option("--ext", type=str, default="mp3", required=False)
+def to_wav(in_fn: str, ext: str):
+    def conv(fn: str):
+        y, sr = librosa.load(fn, sr=None, mono=True)
+        out_fn = change_ext(fn, ".wav")
+        sf.write(out_fn, y, sr)
+
+    path = pathlib.Path(in_fn)
+    if path.is_file():
+        conv(in_fn)
+    elif path.is_dir():
+        print(f"search .{ext} files in folder {in_fn}")
+        fn_list = [str(fn) for fn in path.glob(f"**/*.{ext}")]
+        print(fn_list)
+        pyf.seq(fn_list).for_each(conv)
+    else:
+        print(f"{path} is neither a file nor a directory")
 
 
 @cli.command(help="Mix two wav files, give two wav file names and output file name")

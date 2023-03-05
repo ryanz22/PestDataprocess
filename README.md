@@ -174,7 +174,19 @@ Bugguide: https://bugguide.net/node/view/151116
 
 xeno-canto-acrididae: the download from xeno-canto and its meta data
 
-grasshopper-raw-ds: original dataset contains the sound files have been mono, resample(44100), denoised, peak found.
+check if **xeno-canto-acrididae** contains any mp3 files by
+
+```sh
+find data/sound/xeno-canto-acrididae -name '*.mp3'
+```
+
+If YES, convert them into wav by
+
+```sh
+PYTHONPATH=. poetry run python app/snd_tool.py to-wav -f data/sound/xeno-canto-acrididae/
+```
+
+To normalize (mono, denoise, resample) wav files
 
 ```sh
 PYTHONPATH=. poetry run python app/dataset_tool.py \
@@ -182,29 +194,45 @@ PYTHONPATH=. poetry run python app/dataset_tool.py \
  -o ~/tmp/xeno-normal --sr 44100 --tsr 44100
 ```
 
+NOTE: choose the sound tracks by listen to it, some sound tracks are NOT good
+ML for reasons of too weak, too much noise, has more than one grasshoppers sound
+and so on.
+
+Find peaks of wav files
+
+NOTE: listen to each peak sound track and remove the defected ones
+
 ```sh
 PYTHONPATH=. poetry run python app/dataset_tool.py \
- xeno-canto-peaks -i ~/tmp/xeno-normal/ \
+ xeno-canto-peaks -i ~/tmp/xeno-normal-select/ \
  -o ~/tmp/xeno-peaks --sr 44100
 ```
 
-grasshopper_aug_ds: augment from grasshopper-raw-ds
+**After cherry-picking, move all files to or move the current folder to a folder named xxx-raw-ds
+grasshopper-raw-ds: original dataset contains the sound files have been mono, resample(44100), denoised, peak found.
+
+create a folder named xxx-aug-ds to store the augmented sound tracks from xxx-raw-ds
+and every folder for a gh species 'gh-N' must be created manually. 
+
+try to make the sample counts roughly equal by adjust multiplexer '-c n'
 
 ```sh
 PYTHONPATH=. poetry run python app/snd_tool.py augment \
  -i data/sound/grasshopper-raw-ds/gh-7/ \
- -o data/sound/grasshopper_aug_ds/gh-7 \
+ -o data/sound/grasshopper-aug-ds/gh-7 \
  -b data/sound/background_sounds/mono_5s/ -c 6
 ```
 
-grasshopper-train-ds: train/val/test split from grasshopper_aug_ds
+create the train wav dataset folder named xxx-train-ds and create
+train/val/test split from xxx-aug-ds
 
 ```sh
 PYTHONPATH=. poetry run python app/dataset_tool.py split-folders \
  -i ~/tmp/xeno-peaks/ -o ~/tmp/xeno-train-ds
 ```
 
-gh-cwt-plot-ds: cwt plot from grasshopper-train-ds
+do cwt plot from xxx-train-ds to a folder named xxx-plot-ds which will be 
+created by program
 
 ```sh
 PYTHONPATH=. poetry run python app/dataset_tool.py \

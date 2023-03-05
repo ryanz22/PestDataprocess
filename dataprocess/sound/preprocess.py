@@ -141,6 +141,10 @@ def find_peaks(y, sr: int):
     return peaks_l
 
 
+# check /home/zhangjw/tmp/xeno-canto-normal/chorthippus/gh-23/XC751338 - Chorthippus bornhalmi_mono.wav
+# some empty 2 sec sound tracks
+# check /home/zhangjw/tmp/xeno-normal/gh-23/XC752484 - Chorthippus bornhalmi_mono.wav
+# file numbers are not continuous
 def snd_peaks(in_fn: str, sr: int, back: float, forth: float, out_dir: str):
     print(f"sr: {sr}")
     if sr is None:

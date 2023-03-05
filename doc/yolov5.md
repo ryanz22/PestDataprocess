@@ -92,6 +92,8 @@ with a grasshopper dataset prepared by myself consisting of 16 species soundtrac
 
 ### Train
 
+Enter Yolov5 project folder.
+
 Initial training with grasshopper dataset based on a pretrained efficientnet_v2_m with ImageNet dataset
 
 ```shell
@@ -164,6 +166,8 @@ https://blog.roboflow.com/yolov5-improvements-and-evaluation/
 https://machinelearningknowledge.ai/introduction-to-yolov5-object-detection-with-tutorial/
 
 ### Train
+
+Enter Yolov5 project folder.
 
 Initial training with grasshopper drone image dataset based on a pretrained yolov5l with COCO dataset
 
