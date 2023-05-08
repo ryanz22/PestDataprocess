@@ -66,23 +66,35 @@ def mono(in_fn: str):
         print("this is a mono sound track")
 
 
-@cli.command(help="normalize input sound file and output to the same location")
+@cli.command(help="normalize (mono, denoise and default 22.5KHz) input sound file and output to the same location")
 @click.option(
     "-f",
     "--in_fn",
     required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help="convert any types of sound to mono 22050 wav",
+    type=click.Path(exists=True, dir_okay=True),
+    help="convert any types of sound to mono (default 22050) and denoised wav",
 )
 @click.option("-t", "--tsr", default=22050)
-def normalize(in_fn: str, tsr: int):
-    data, sr = librosa.load(in_fn, sr=None, mono=True)
-    data2, sr2 = norm(data, sr, tsr)
-    out_fn = append_suffix(in_fn, "mono_22050")
-    if pathlib.Path(in_fn).suffix != ".wav":
-        out_fn = change_ext(out_fn, ".wav")
-    sf.write(out_fn, data2, sr2)
+@click.option("--ext", type=str, default="mp3", required=False)
+def normalize(in_fn: str, tsr: int, ext: str):
+    def conv(fn: str):
+        data, sr = librosa.load(fn, sr=None, mono=True)
+        data2, sr2 = norm(data, sr, tsr)
+        out_fn = append_suffix(fn, f"mono_{tsr}_denoised")
+        if pathlib.Path(fn).suffix != ".wav":
+            out_fn = change_ext(out_fn, ".wav")
+        sf.write(out_fn, data2, sr2)
 
+    path = pathlib.Path(in_fn)
+    if path.is_file():
+        conv(in_fn)
+    elif path.is_dir():
+        print(f"search .{ext} files in folder {in_fn}")
+        fn_list = [str(fn) for fn in path.glob(f"**/*.{ext}")]
+        print(fn_list)
+        pyf.seq(fn_list).for_each(conv)
+    else:
+        print(f"{path} is neither a file nor a directory")
 
 @cli.command(help="resample input sound file and output to the same location")
 @click.option(
@@ -298,7 +310,7 @@ def stretch(in_fn: str, in_dir: str, rate: float, out_dir: str):
         print("must specify either in_fn or in_dir")
 
 
-@cli.command(help="Convert to wav file")
+@cli.command(help="Convert other types (mp3 default) to wav file")
 @click.option(
     "-f",
     "--in_fn",
