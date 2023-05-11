@@ -174,3 +174,29 @@ def normalize(y, sr: int, tsr: int) -> Tuple[NDArray, int]:
     y4, sr4 = denoise(y3, sr3)
 
     return y4, sr4
+
+
+def mix(fn_1: str | tuple[NDArray, int], fn_2: str) -> Exception | tuple[NDArray, int]:
+    if isinstance(fn_1, str):
+        y_1, sr_1 = librosa.load(fn_1, sr=None, mono=True)
+    else:
+        y_1, sr_1 = fn_1
+    y_2, sr_2 = librosa.load(fn_2, sr=None, mono=True)
+
+    if sr_1 != sr_2:
+        return Exception(f"{fn_1} SR {sr_1} is different from {fn_2} SR {sr_2}")
+
+    l_1 = len(y_1)
+    l_2 = len(y_2)
+
+    new_l = l_1
+    if l_1 != l_2:
+        print(f"{fn_1} len {l_1} is different from {fn_2} len {l_2}")
+        new_l = l_1 if l_1 < l_2 else l_2
+        print(f"shorter len {new_l} will be used")
+
+    y_1 = y_1[:new_l]
+    y_2 = y_2[:new_l]
+    y_mix = y_1 + y_2
+
+    return y_mix, sr_1

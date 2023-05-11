@@ -26,6 +26,8 @@ from dataprocess.util.data_process import read_snd_file
 
 from dataprocess.sound.preprocess import snd_peaks, normalize
 
+from dataprocess.sound.sep_data import create_sep2mix_csv
+
 
 @click.group()
 def cli():
@@ -291,6 +293,46 @@ def xeno_canto_normalize(in_dir: str, out_dir: str, sr: int, tsr: int):
 def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     ext = [".wav", ".mp3"]
     return list(filter(lambda p: p.suffix in ext, p.parent.glob("**/*")))
+
+
+@cli.command(help="Generate src sep dataset")
+@click.option(
+    "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option(
+    "-o", "--out_dir", required=True, type=click.Path(exists=False, dir_okay=True)
+)
+# @click.option("--sr", type=int, required=True)
+# @click.option("--tsr", type=int, required=True)
+@click.option(
+    "--mux", type=int, required=True, default=1, help="multiplexer of mix sample count"
+)
+@click.option(
+    "--n_src", type=int, required=True, default=2, help="source count, support 2 or 3"
+)
+@click.option(
+    "--b_g",
+    type=click.Choice(["bird", "gh"]),
+    required=True,
+    default="bird",
+    help="specify the 2nd source is bird or grasshopper when n_src == 2",
+)
+@click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
+def sep_data(in_dir: str, out_dir: str, mux: int, n_src: int, b_g: str, noise: bool):
+    print(f"input folder: {in_dir}")
+    print(f"output folder: {out_dir}")
+    print(f"n_src: {n_src}")
+    print(f"noise: {noise}")
+
+    ret = create_sep2mix_csv(
+        pathlib.Path(in_dir),
+        pathlib.Path(out_dir),
+        n_src=n_src,
+        mux=mux,
+        bird_or_gh=b_g,
+        addnoise=noise,
+    )
+    print(ret)
 
 
 if __name__ == "__main__":
