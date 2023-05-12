@@ -318,11 +318,27 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     help="specify the 2nd source is bird or grasshopper when n_src == 2",
 )
 @click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
-def sep_data(in_dir: str, out_dir: str, mux: int, n_src: int, b_g: str, noise: bool):
+@click.option(
+    "--train_ds",
+    nargs=3,
+    type=int,
+    required=False,
+    help="sample count multiplexer of train, val, test",
+)
+def sep_data(
+    in_dir: str,
+    out_dir: str,
+    mux: int,
+    n_src: int,
+    b_g: str,
+    noise: bool,
+    train_ds: tuple[int, int, int],
+):
     print(f"input folder: {in_dir}")
     print(f"output folder: {out_dir}")
     print(f"n_src: {n_src}")
     print(f"noise: {noise}")
+    print(f"train_ds: {train_ds}")
 
     ret = create_sep2mix_csv(
         pathlib.Path(in_dir),
@@ -331,6 +347,7 @@ def sep_data(in_dir: str, out_dir: str, mux: int, n_src: int, b_g: str, noise: b
         mux=mux,
         bird_or_gh=b_g,
         addnoise=noise,
+        train_ds=train_ds,
     )
     print(ret)
 
