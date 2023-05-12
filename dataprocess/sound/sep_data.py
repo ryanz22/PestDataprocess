@@ -7,7 +7,9 @@ import csv
 import pathlib
 import random
 from enum import Enum
-from io import TextIOWrapper
+
+# from io import TextIOWrapper
+from typing import TextIO
 
 from dataprocess.sound.preprocess import mix as lib_mix
 
@@ -130,8 +132,7 @@ def create_sep2mix_csv(
         train_mux, val_mux, test_mux = train_ds
 
         # create folders
-        train_dir = savepath / "train"
-        train_dir.mkdir()
+        train_dir = make_dir(savepath, "train", n_src, addnoise)
         with open(savepath / f"train_mix_{n_src}.csv", "w") as train_csv:
             ret = process(
                 train_csv,
@@ -145,16 +146,16 @@ def create_sep2mix_csv(
                 s3_fl_paths=s3_fl_paths,
                 noise_fl_paths=noise_fl_paths,
                 savepath=train_dir,
+                ds_mode="train",
             )
 
             if isinstance(ret, Exception):
                 return ret
 
-        val_dir = savepath / "val"
-        val_dir.mkdir()
-        with open(savepath / f"val_mix_{n_src}.csv", "w") as train_csv:
+        val_dir = make_dir(savepath, "val", n_src, addnoise)
+        with open(savepath / f"val_mix_{n_src}.csv", "w") as val_csv:
             ret = process(
-                train_csv,
+                val_csv,
                 csv_columns=csv_columns,
                 mux=val_mux,
                 n_src=n_src,
@@ -165,16 +166,16 @@ def create_sep2mix_csv(
                 s3_fl_paths=s3_fl_paths,
                 noise_fl_paths=noise_fl_paths,
                 savepath=val_dir,
+                ds_mode="val",
             )
 
             if isinstance(ret, Exception):
                 return ret
 
-        test_dir = savepath / "test"
-        test_dir.mkdir()
-        with open(savepath / f"test_mix_{n_src}.csv", "w") as train_csv:
+        test_dir = make_dir(savepath, "test", n_src, addnoise)
+        with open(savepath / f"test_mix_{n_src}.csv", "w") as test_csv:
             return process(
-                train_csv,
+                test_csv,
                 csv_columns=csv_columns,
                 mux=test_mux,
                 n_src=n_src,
@@ -185,6 +186,7 @@ def create_sep2mix_csv(
                 s3_fl_paths=s3_fl_paths,
                 noise_fl_paths=noise_fl_paths,
                 savepath=test_dir,
+                ds_mode="test",
             )
     else:
         with open(savepath / f"mix_{n_src}.csv", "w") as csvfile:
@@ -204,7 +206,7 @@ def create_sep2mix_csv(
 
 
 def process(
-    csvfile: TextIOWrapper,
+    csvfile: TextIO,
     csv_columns: list[str],
     mux: int,
     n_src: int,
@@ -215,6 +217,7 @@ def process(
     s3_fl_paths: list[pathlib.Path],
     noise_fl_paths: list[pathlib.Path],
     savepath: pathlib.Path,
+    ds_mode: str,
 ) -> Exception | None:
     writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
     writer.writeheader()
@@ -222,53 +225,75 @@ def process(
         for i, path in enumerate(s1_fl_paths):
             id = n * s1_fl_cnt + i
 
-            ret = mix(row, n_src, addnoise)
+            s1_wav = path
+            s2_wav = random_pick(s2_fl_paths)
+            s3_wav = random_pick(s3_fl_paths)
+            noise_wav = random_pick(noise_fl_paths)
+            mix_wav = savepath / "mix" / f"mix_{id}.wav"
+            ret = mix(
+                s1_wav,
+                s2_wav,
+                s3_wav,
+                noise_wav,
+                mix_wav,
+                n_src,
+                addnoise,
+            )
             if isinstance(ret, Exception):
                 return ret
 
-            if n_src == 2:
-                row = {
-                    "ID": id,
-                    "mix_wav": savepath / f"mix_{id}.wav",
-                    "s1_wav": "$data_root/" + str(path),
-                    "s2_wav": random_pick(s2_fl_paths),
-                    "noise_wav": random_pick(noise_fl_paths),
-                }
-            else:
-                row = {
-                    "ID": id,
-                    "mix_wav": savepath / f"mix_{id}.wav",
-                    "s1_wav": path,
-                    "s2_wav": random_pick(s2_fl_paths),
-                    "s3_wav": random_pick(s3_fl_paths),
-                    "noise_wav": random_pick(noise_fl_paths),
-                }
+            copy_file(savepath, "s1", s1_wav)
+            copy_file(savepath, "s2", s2_wav)
+
+            row = {
+                "ID": id,
+                "mix_wav": f"$data_root/{ds_mode}/mix/" + str(mix_wav.name),
+                "s1_wav": f"$data_root/{ds_mode}/s1/" + str(s1_wav.name),
+                "s2_wav": f"$data_root/{ds_mode}/s2/" + str(s2_wav.name),
+            }
+            if n_src == 3:
+                row["s3_wav"] = f"$data_root/{ds_mode}s3/" + str(s3_wav.name)
+                copy_file(savepath, "s3", s3_wav)
+
+            if addnoise:
+                row["noise_wav"] = f"$data_root/{ds_mode}noise/" + str(noise_wav.name)
+                copy_file(savepath, "noise", noise_wav)
 
             writer.writerow(row)
 
 
-def random_pick(fl: list[pathlib.Path]) -> pathlib.Path:
+def random_pick(fl: list[pathlib.Path]) -> None | pathlib.Path:
     cnt = len(fl)
     if cnt == 0:
-        return pathlib.Path("")
+        return None
 
     rand = random.randint(0, cnt - 1)
 
     return fl[rand]
 
 
-def mix(row: dict, n_src: int, noise: bool) -> Exception | None:
+def mix(
+    s1_wav: pathlib.Path,
+    s2_wav: pathlib.Path,
+    s3_wav: pathlib.Path,
+    noise_wav: pathlib.Path,
+    mix_wav: pathlib.Path,
+    n_src: int,
+    noise: bool,
+) -> Exception | None:
+    """
+    mix will generate mix soundtrack and copy source files
+    """
     import soundfile as sf
 
-    fn_1, fn_2 = str(row["s1_wav"]), str(row["s2_wav"])
-    ret = lib_mix(fn_1, fn_2)
+    ret = lib_mix(str(s1_wav), str(s2_wav))
     if isinstance(ret, Exception):
         return ret
 
     y_mix, sr = ret
 
     if n_src == 3:
-        ret = lib_mix((y_mix, sr), row["s3_wav"])
+        ret = lib_mix((y_mix, sr), str(s3_wav))
 
         if isinstance(ret, Exception):
             return ret
@@ -276,13 +301,38 @@ def mix(row: dict, n_src: int, noise: bool) -> Exception | None:
         y_mix, sr = ret
 
     if noise:
-        ret = lib_mix((y_mix, sr), row["noise_wav"])
+        ret = lib_mix((y_mix, sr), str(noise_wav))
 
         if isinstance(ret, Exception):
             return ret
 
         y_mix, sr = ret
 
-    sf.write(str(row["mix_wav"]), y_mix, sr)
+    sf.write(mix_wav, y_mix, sr)
 
     return None
+
+
+def make_dir(
+    path: pathlib.Path, dir_name: str, n_src: int, noise: bool
+) -> pathlib.Path:
+    new_path = path / dir_name
+    new_path.mkdir()
+    (new_path / "mix").mkdir()
+    (new_path / "s1").mkdir()
+    (new_path / "s2").mkdir()
+
+    if n_src == 3:
+        (new_path / "s3").mkdir()
+
+    if noise:
+        (new_path / "noise").mkdir()
+
+    return new_path
+
+
+def copy_file(dest_path: pathlib.Path, folder: str, src_file: pathlib.Path):
+    dest_file = dest_path / folder / src_file.name  # Create the destination file path
+
+    if not dest_file.exists():
+        dest_file.write_bytes(src_file.read_bytes())
