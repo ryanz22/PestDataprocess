@@ -19,6 +19,10 @@ GH2_DIR = "gh-21"
 BIRD_DIR = "bird"
 DRONE_DIR = "drone"
 
+TRAIN_DIR = "train"
+VAL_DIR = "val"
+TEST_DIR = "test"
+
 MIX2_CSV_COLUMNS = [
     "ID",
     "mix_wav",
@@ -82,16 +86,6 @@ def create_sep2mix_csv(
     ID, mix_wav, s1_wav, s2_wav, s3_wav, noise_wav
     """
 
-    s1_path = datapath / main_src
-    # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
-    s1_fl_paths = list(s1_path.glob("*.wav"))
-    s1_fl_cnt = len(s1_fl_paths)
-    if s1_fl_cnt == 0:
-        return Exception(f"Can NOT find *.wav files in {s1_path}")
-
-    print(f"total {len(s1_fl_paths)} files in {s1_path}")
-    # print(f"S1 files:\n{s1_fl_paths}")
-
     if n_src == 2:
         csv_columns = MIX2_CSV_COLUMNS
         if bird_or_gh == "bird":
@@ -133,75 +127,146 @@ def create_sep2mix_csv(
 
     if train_ds is not None:
         train_mux, val_mux, test_mux = train_ds
+        s1_path = datapath / main_src
+
+        ret = ds_process(
+            s1_path=s1_path,
+            s2_fl_paths=s2_fl_paths,
+            s3_fl_paths=s3_fl_paths,
+            noise_fl_paths=noise_fl_paths,
+            savepath=savepath,
+            csv_columns=csv_columns,
+            dir_type=TRAIN_DIR,
+            n_src=n_src,
+            mux=train_mux,
+            addnoise=addnoise,
+            fix_len=fix_len,
+        )
 
         # create folders
-        train_dir = make_dir(savepath, "train", n_src, addnoise)
-        with open(savepath / f"train_mix_{n_src}.csv", "w") as train_csv:
-            ret = process(
-                train_csv,
-                csv_columns=csv_columns,
-                mux=train_mux,
-                n_src=n_src,
-                s1_fl_cnt=s1_fl_cnt,
-                addnoise=addnoise,
-                s1_fl_paths=s1_fl_paths,
-                s2_fl_paths=s2_fl_paths,
-                s3_fl_paths=s3_fl_paths,
-                noise_fl_paths=noise_fl_paths,
-                savepath=train_dir,
-                ds_mode="train",
-                fix_len=fix_len,
-            )
+        # train_dir = make_dir(savepath, TRAIN_DIR, n_src, addnoise)
+        # with open(savepath / f"train_mix_{n_src}.csv", "w") as train_csv:
+        #     # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
+        #     s1_train_paths = list((s1_path / TRAIN_DIR).glob("*.wav"))
+        #     s1_train_cnt = len(s1_train_paths)
+        #     if s1_train_cnt == 0:
+        #         return Exception(f"Can NOT find *.wav files in {s1_path}/{TRAIN_DIR}")
+        #
+        #     print(f"total {len(s1_train_paths)} files in {s1_path}/{TRAIN_DIR}")
+        #
+        #     ret = process(
+        #         train_csv,
+        #         csv_columns=csv_columns,
+        #         mux=train_mux,
+        #         n_src=n_src,
+        #         addnoise=addnoise,
+        #         s1_fl_paths=s1_train_paths,
+        #         s2_fl_paths=s2_fl_paths,
+        #         s3_fl_paths=s3_fl_paths,
+        #         noise_fl_paths=noise_fl_paths,
+        #         savepath=train_dir,
+        #         ds_mode="train",
+        #         fix_len=fix_len,
+        #     )
 
-            if isinstance(ret, Exception):
-                return ret
+        if isinstance(ret, Exception):
+            return ret
 
-        val_dir = make_dir(savepath, "val", n_src, addnoise)
-        with open(savepath / f"val_mix_{n_src}.csv", "w") as val_csv:
-            ret = process(
-                val_csv,
-                csv_columns=csv_columns,
-                mux=val_mux,
-                n_src=n_src,
-                s1_fl_cnt=s1_fl_cnt,
-                addnoise=addnoise,
-                s1_fl_paths=s1_fl_paths,
-                s2_fl_paths=s2_fl_paths,
-                s3_fl_paths=s3_fl_paths,
-                noise_fl_paths=noise_fl_paths,
-                savepath=val_dir,
-                ds_mode="val",
-                fix_len=fix_len,
-            )
+        ret = ds_process(
+            s1_path=s1_path,
+            s2_fl_paths=s2_fl_paths,
+            s3_fl_paths=s3_fl_paths,
+            noise_fl_paths=noise_fl_paths,
+            savepath=savepath,
+            csv_columns=csv_columns,
+            dir_type=VAL_DIR,
+            n_src=n_src,
+            mux=val_mux,
+            addnoise=addnoise,
+            fix_len=fix_len,
+        )
 
-            if isinstance(ret, Exception):
-                return ret
+        # val_dir = make_dir(savepath, "val", n_src, addnoise)
+        # with open(savepath / f"val_mix_{n_src}.csv", "w") as val_csv:
+        #     s1_val_paths = list((s1_path / VAL_DIR).glob("*.wav"))
+        #     s1_val_cnt = len(s1_val_paths)
+        #     if s1_val_cnt == 0:
+        #         return Exception(f"Can NOT find *.wav files in {s1_path}/{VAL_DIR}")
+        #
+        #     print(f"total {len(s1_val_paths)} files in {s1_path}/{VAL_DIR}")
+        #
+        #     ret = process(
+        #         val_csv,
+        #         csv_columns=csv_columns,
+        #         mux=val_mux,
+        #         n_src=n_src,
+        #         addnoise=addnoise,
+        #         s1_fl_paths=s1_val_paths,
+        #         s2_fl_paths=s2_fl_paths,
+        #         s3_fl_paths=s3_fl_paths,
+        #         noise_fl_paths=noise_fl_paths,
+        #         savepath=val_dir,
+        #         ds_mode="val",
+        #         fix_len=fix_len,
+        #     )
 
-        test_dir = make_dir(savepath, "test", n_src, addnoise)
-        with open(savepath / f"test_mix_{n_src}.csv", "w") as test_csv:
-            return process(
-                test_csv,
-                csv_columns=csv_columns,
-                mux=test_mux,
-                n_src=n_src,
-                s1_fl_cnt=s1_fl_cnt,
-                addnoise=addnoise,
-                s1_fl_paths=s1_fl_paths,
-                s2_fl_paths=s2_fl_paths,
-                s3_fl_paths=s3_fl_paths,
-                noise_fl_paths=noise_fl_paths,
-                savepath=test_dir,
-                ds_mode="test",
-                fix_len=fix_len,
-            )
+        if isinstance(ret, Exception):
+            return ret
+
+        return ds_process(
+            s1_path=s1_path,
+            s2_fl_paths=s2_fl_paths,
+            s3_fl_paths=s3_fl_paths,
+            noise_fl_paths=noise_fl_paths,
+            savepath=savepath,
+            csv_columns=csv_columns,
+            dir_type=TEST_DIR,
+            n_src=n_src,
+            mux=test_mux,
+            addnoise=addnoise,
+            fix_len=fix_len,
+        )
+
+        # test_dir = make_dir(savepath, "test", n_src, addnoise)
+        # with open(savepath / f"test_mix_{n_src}.csv", "w") as test_csv:
+        #     s1_test_paths = list((s1_path / TEST_DIR).glob("*.wav"))
+        #     s1_test_cnt = len(s1_test_paths)
+        #     if s1_test_cnt == 0:
+        #         return Exception(f"Can NOT find *.wav files in {s1_path}/{TEST_DIR}")
+        #
+        #     print(f"total {len(s1_test_paths)} files in {s1_path}/{TEST_DIR}")
+        #
+        #     return process(
+        #         test_csv,
+        #         csv_columns=csv_columns,
+        #         mux=test_mux,
+        #         n_src=n_src,
+        #         addnoise=addnoise,
+        #         s1_fl_paths=s1_test_paths,
+        #         s2_fl_paths=s2_fl_paths,
+        #         s3_fl_paths=s3_fl_paths,
+        #         noise_fl_paths=noise_fl_paths,
+        #         savepath=test_dir,
+        #         ds_mode="test",
+        #         fix_len=fix_len,
+        #     )
     else:
+        s1_path = datapath / main_src
+        # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
+        s1_fl_paths = list(s1_path.glob("*.wav"))
+        s1_fl_cnt = len(s1_fl_paths)
+        if s1_fl_cnt == 0:
+            return Exception(f"Can NOT find *.wav files in {s1_path}")
+
+        print(f"total {len(s1_fl_paths)} files in {s1_path}")
+        # print(f"S1 files:\n{s1_fl_paths}")
+
         with open(savepath / f"mix_{n_src}.csv", "w") as csvfile:
             return process(
                 csvfile,
                 csv_columns=csv_columns,
                 mux=mux,
                 n_src=n_src,
-                s1_fl_cnt=s1_fl_cnt,
                 addnoise=addnoise,
                 s1_fl_paths=s1_fl_paths,
                 s2_fl_paths=s2_fl_paths,
@@ -213,12 +278,50 @@ def create_sep2mix_csv(
             )
 
 
+def ds_process(
+    s1_path: pathlib.Path,
+    s2_fl_paths: list[pathlib.Path],
+    s3_fl_paths: list[pathlib.Path],
+    noise_fl_paths: list[pathlib.Path],
+    savepath: pathlib.Path,
+    csv_columns: list[str],
+    dir_type: str,
+    n_src: int,
+    mux: int,
+    addnoise: bool,
+    fix_len: int,
+):
+    sub_dir = make_dir(savepath, dir_type, n_src, addnoise)
+    with open(savepath / f"{dir_type}_mix_{n_src}.csv", "w") as sub_csv:
+        # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
+        s1_sub_paths = list((s1_path / dir_type).glob("*.wav"))
+        s1_sub_cnt = len(s1_sub_paths)
+        if s1_sub_cnt == 0:
+            return Exception(f"Can NOT find *.wav files in {s1_path}/{dir_type}")
+
+        print(f"total {len(s1_sub_paths)} files in {s1_path}/{dir_type}")
+
+        return process(
+            sub_csv,
+            csv_columns=csv_columns,
+            mux=mux,
+            n_src=n_src,
+            addnoise=addnoise,
+            s1_fl_paths=s1_sub_paths,
+            s2_fl_paths=s2_fl_paths,
+            s3_fl_paths=s3_fl_paths,
+            noise_fl_paths=noise_fl_paths,
+            savepath=sub_dir,
+            ds_mode=dir_type,
+            fix_len=fix_len,
+        )
+
+
 def process(
     csvfile: TextIO,
     csv_columns: list[str],
     mux: int,
     n_src: int,
-    s1_fl_cnt: int,
     addnoise: bool,
     s1_fl_paths: list[pathlib.Path],
     s2_fl_paths: list[pathlib.Path],
@@ -231,6 +334,10 @@ def process(
     """
     sepformer requires all soundtrack must be exact same length
     """
+    s1_fl_cnt = len(s1_fl_paths)
+    if s1_fl_cnt == 0:
+        return Exception("empty s1_fl_paths")
+
     writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
     writer.writeheader()
     for n in range(0, mux):
@@ -250,18 +357,18 @@ def process(
                 "s2_wav": f"$data_root/{ds_mode}/s2/" + str(s2_wav.name),
             }
             if n_src == 3:
-                row["s3_wav"] = f"$data_root/{ds_mode}s3/" + str(s3_wav.name)
                 s3_wav = copy_file(
                     savepath, "s3", random_pick(s3_fl_paths), fix_len=fix_len
                 )
+                row["s3_wav"] = f"$data_root/{ds_mode}/s3/" + str(s3_wav.name)
             else:
                 s3_wav = None
 
             if addnoise:
-                row["noise_wav"] = f"$data_root/{ds_mode}noise/" + str(noise_wav.name)
                 noise_wav = copy_file(
                     savepath, "noise", random_pick(noise_fl_paths), fix_len=fix_len
                 )
+                row["noise_wav"] = f"$data_root/{ds_mode}/noise/" + str(noise_wav.name)
             else:
                 noise_wav = None
 
