@@ -1,6 +1,7 @@
 import noisereduce as nr
 import librosa
 import pathlib
+import numpy as np
 from typing import Dict, Tuple
 from numpy.typing import NDArray
 import wave
@@ -176,7 +177,15 @@ def normalize(y, sr: int, tsr: int) -> Tuple[NDArray, int]:
     return y4, sr4
 
 
-def mix(fn_1: str | tuple[NDArray, int], fn_2: str) -> Exception | tuple[NDArray, int]:
+def mix(
+    fn_1: str | tuple[NDArray, int], fn_2: str, length: int = 0, mode: str = "shorter"
+) -> Exception | tuple[NDArray, int]:
+    """
+    mode controls how to mix two soundtracks, default is shorter
+    shorter means to use the shorter one
+    first means to use the first soundtrack length
+    fix means to use a fix length
+    """
     if isinstance(fn_1, str):
         y_1, sr_1 = librosa.load(fn_1, sr=None, mono=True)
     else:
@@ -189,11 +198,30 @@ def mix(fn_1: str | tuple[NDArray, int], fn_2: str) -> Exception | tuple[NDArray
     l_1 = len(y_1)
     l_2 = len(y_2)
 
-    new_l = l_1
-    if l_1 != l_2:
-        print(f"{fn_1} len {l_1} is different from {fn_2} len {l_2}")
-        new_l = l_1 if l_1 < l_2 else l_2
-        print(f"shorter len {new_l} will be used")
+    if mode == "fix":
+        new_l = length
+        if l_1 < length:
+            padding = length - l_1
+            y_1 = np.pad(y_1, (0, padding), "constant")
+
+        if l_2 < length:
+            padding = length - l_2
+            y_2 = np.pad(y_2, (0, padding), "constant")
+    else:
+        new_l = l_1
+        if l_1 != l_2:
+            if mode == "shorter":
+                print(f"{fn_1} len {l_1} is different from {fn_2} len {l_2}")
+                new_l = l_1 if l_1 < l_2 else l_2
+                print(f"shorter len {new_l} will be used")
+            elif mode == "first":
+                if l_1 > l_2:
+                    padding = l_1 - l_2
+                    y_2 = np.pad(y_2, (0, padding), "constant")
+            else:
+                return Exception(
+                    f"Unknown mix mode [{mode}], supports shorter or first"
+                )
 
     y_1 = y_1[:new_l]
     y_2 = y_2[:new_l]

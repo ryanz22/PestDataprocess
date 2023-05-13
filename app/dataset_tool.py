@@ -310,6 +310,14 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
 @click.option(
     "--n_src", type=int, required=True, default=2, help="source count, support 2 or 3"
 )
+@click.option("--main_src", type=str, required=True, help="the main source folder name")
+@click.option(
+    "--fix_len",
+    type=int,
+    required=False,
+    default=0,
+    help="specify the fix length of soundtrack, such as 44100",
+)
 @click.option(
     "--b_g",
     type=click.Choice(["bird", "gh"]),
@@ -333,6 +341,8 @@ def sep_data(
     b_g: str,
     noise: bool,
     train_ds: tuple[int, int, int],
+    fix_len: int,
+    main_src: str,
 ):
     print(f"input folder: {in_dir}")
     print(f"output folder: {out_dir}")
@@ -343,13 +353,48 @@ def sep_data(
     ret = create_sep2mix_csv(
         pathlib.Path(in_dir),
         pathlib.Path(out_dir),
+        main_src=main_src,
         n_src=n_src,
         mux=mux,
         bird_or_gh=b_g,
         addnoise=noise,
         train_ds=train_ds,
+        fix_len=fix_len,
     )
     print(ret)
+
+
+@cli.command(help="Generate src sep dataset")
+@click.option(
+    "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option(
+    "--fix_len",
+    type=int,
+    required=False,
+    default=0,
+    help="specify the fix length of soundtrack, such as 44100",
+)
+def check_len(in_dir: str, fix_len: int):
+    import librosa
+
+    if fix_len <= 0:
+        print(f"fix_len can NOT be less or equal than 0")
+        return
+
+    p = pathlib.Path(in_dir)
+    fl = list(p.glob("**/*.wav"))
+
+    def snd_len(fn: str) -> int:
+        y, _ = librosa.load(fn, sr=None, mono=True)
+        return len(y)
+
+    ret = (
+        pyf.seq(fl)
+        .map(lambda fn: (fn, snd_len(str(fn))))
+        .filter(lambda t: t[1] != fix_len)
+    )
+    print(f"soundtracks whose len is NOT {fix_len}:\n{pyf.seq(ret)}")
 
 
 if __name__ == "__main__":

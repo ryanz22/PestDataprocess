@@ -60,6 +60,16 @@ train/val/test
 
 ## How to run
 
+To create a mono dataset
 ```sh
-poetry run python app/dataset_tool.py sep-data -i data/sound/insect_sep_ds/raw-2s/ -o data/sound/insect_sep_ds/mix2-gh-bird-noise/ --n_src 3 --noise --mux 2
+poetry run python app/dataset_tool.py sep-data -i data/sound/insect_sep_ds/raw-2s/ \
+-o data/sound/insect_sep_ds/mix2-gh-bird-noise/ --n_src 3 --noise --mux 2
+```
+
+To create a train/val/test dataset
+```shell
+PYTHONPATH=. poetry run python app/dataset_tool.py sep-data \
+-i /media/zhangjw/ml-data/projects/ml/datasets/pestdataprocess/sound/insect_sep_ds/raw-2s/ \
+-o /media/zhangjw/ml-data/projects/ml/datasets/pestdataprocess/sound/insect_sep_ds/train-mix2-gh-bird-clean/ \
+--n_src 2 --train_ds 5 2 1 --fix_len 88200 --main_src gh-18
 ```
