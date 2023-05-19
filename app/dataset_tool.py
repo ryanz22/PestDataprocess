@@ -300,7 +300,7 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
 )
 @click.option(
-    "-o", "--out_dir", required=True, type=click.Path(exists=False, dir_okay=True)
+    "-o", "--out_dir", required=True, type=click.Path(exists=True, dir_okay=True)
 )
 # @click.option("--sr", type=int, required=True)
 # @click.option("--tsr", type=int, required=True)
