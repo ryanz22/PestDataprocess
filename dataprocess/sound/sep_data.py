@@ -18,6 +18,7 @@ from dataprocess.sound.preprocess import mix as lib_mix
 GH2_DIR = "gh-21"
 BIRD_DIR = "bird"
 DRONE_DIR = "drone"
+CRICKET_DIR = "cricket"
 
 TRAIN_DIR = "train"
 VAL_DIR = "val"
@@ -86,22 +87,27 @@ def create_sep2mix_csv(
     ID, mix_wav, s1_wav, s2_wav, s3_wav, noise_wav
     """
 
+    match bird_or_gh:
+        case "bird":
+            s2_path = datapath / BIRD_DIR
+        case "gh":
+            s2_path = datapath / GH2_DIR
+        case "cricket":
+            s2_path = datapath / CRICKET_DIR
+        case _:
+            return Exception(f"unknown 2nd source type: {bird_or_gh}")
+
     if n_src == 2:
         csv_columns = MIX2_CSV_COLUMNS
-        if bird_or_gh == "bird":
-            s2_path = datapath / BIRD_DIR
-        else:
-            s2_path = datapath / GH2_DIR
 
         # s2_fl_paths = [f.name for f in s2_path.glob("*.wav")]
         s2_fl_paths = list(s2_path.glob("*.wav"))
         s2_fl_cnt = len(s2_fl_paths)
-        print(f"total {s2_fl_cnt} files in {s2_path}")
+        print(f"source 2 path: total {s2_fl_cnt} files in {s2_path}")
         # print(f"\n\nS2 files:\n{s2_fl_paths}")
         s3_fl_paths = []
     else:
         csv_columns = MIX3_CSV_COLUMNS
-        s2_path = datapath / BIRD_DIR
         s3_path = datapath / GH2_DIR
 
         # s2_fl_paths = [f.name for f in s2_path.glob("*.wav")]

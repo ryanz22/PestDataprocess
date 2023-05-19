@@ -297,7 +297,11 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
 
 @cli.command(help="Generate src sep dataset")
 @click.option(
-    "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+    "-i",
+    "--in_dir",
+    required=True,
+    type=click.Path(exists=True, dir_okay=True),
+    help="the raw dataset folder",
 )
 @click.option(
     "-o", "--out_dir", required=True, type=click.Path(exists=True, dir_okay=True)
@@ -310,7 +314,12 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
 @click.option(
     "--n_src", type=int, required=True, default=2, help="source count, support 2 or 3"
 )
-@click.option("--main_src", type=str, required=True, help="the main source folder name")
+@click.option(
+    "--main_src",
+    type=str,
+    required=True,
+    help="the main source folder name, must specify a folder contains train/val/test subfoloder when used with --train_ds option",
+)
 @click.option(
     "--fix_len",
     type=int,
@@ -319,11 +328,11 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     help="specify the fix length of soundtrack, such as 44100",
 )
 @click.option(
-    "--b_g",
-    type=click.Choice(["bird", "gh"]),
+    "--b_g_c",
+    type=click.Choice(["bird", "gh", "cricket"]),
     required=True,
     default="bird",
-    help="specify the 2nd source is bird or grasshopper when n_src == 2",
+    help="specify the 2nd source is bird, cricket or grasshopper, the 3rd source of mix3 will be always gh",
 )
 @click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
 @click.option(
@@ -338,7 +347,7 @@ def sep_data(
     out_dir: str,
     mux: int,
     n_src: int,
-    b_g: str,
+    b_g_c: str,
     noise: bool,
     train_ds: tuple[int, int, int],
     fix_len: int,
@@ -350,13 +359,20 @@ def sep_data(
     print(f"noise: {noise}")
     print(f"train_ds: {train_ds}")
 
+    if train_ds is not None:
+        if not (pathlib.Path(in_dir) / main_src / "train").exists():
+            print(
+                f"when --train_ds is specified, main_src folder must contain train/val/test subfolders"
+            )
+            return
+
     ret = create_sep2mix_csv(
         pathlib.Path(in_dir),
         pathlib.Path(out_dir),
         main_src=main_src,
         n_src=n_src,
         mux=mux,
-        bird_or_gh=b_g,
+        bird_or_gh=b_g_c,
         addnoise=noise,
         train_ds=train_ds,
         fix_len=fix_len,
