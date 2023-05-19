@@ -86,6 +86,7 @@ def create_sep2mix_csv(
     CSV header
     ID, mix_wav, s1_wav, s2_wav, s3_wav, noise_wav
     """
+    s1_path = datapath / main_src
 
     match bird_or_gh:
         case "bird":
@@ -133,7 +134,6 @@ def create_sep2mix_csv(
 
     if train_ds is not None:
         train_mux, val_mux, test_mux = train_ds
-        s1_path = datapath / main_src
 
         ret = ds_process(
             s1_path=s1_path,
@@ -148,32 +148,6 @@ def create_sep2mix_csv(
             addnoise=addnoise,
             fix_len=fix_len,
         )
-
-        # create folders
-        # train_dir = make_dir(savepath, TRAIN_DIR, n_src, addnoise)
-        # with open(savepath / f"train_mix_{n_src}.csv", "w") as train_csv:
-        #     # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
-        #     s1_train_paths = list((s1_path / TRAIN_DIR).glob("*.wav"))
-        #     s1_train_cnt = len(s1_train_paths)
-        #     if s1_train_cnt == 0:
-        #         return Exception(f"Can NOT find *.wav files in {s1_path}/{TRAIN_DIR}")
-        #
-        #     print(f"total {len(s1_train_paths)} files in {s1_path}/{TRAIN_DIR}")
-        #
-        #     ret = process(
-        #         train_csv,
-        #         csv_columns=csv_columns,
-        #         mux=train_mux,
-        #         n_src=n_src,
-        #         addnoise=addnoise,
-        #         s1_fl_paths=s1_train_paths,
-        #         s2_fl_paths=s2_fl_paths,
-        #         s3_fl_paths=s3_fl_paths,
-        #         noise_fl_paths=noise_fl_paths,
-        #         savepath=train_dir,
-        #         ds_mode="train",
-        #         fix_len=fix_len,
-        #     )
 
         if isinstance(ret, Exception):
             return ret
@@ -192,30 +166,6 @@ def create_sep2mix_csv(
             fix_len=fix_len,
         )
 
-        # val_dir = make_dir(savepath, "val", n_src, addnoise)
-        # with open(savepath / f"val_mix_{n_src}.csv", "w") as val_csv:
-        #     s1_val_paths = list((s1_path / VAL_DIR).glob("*.wav"))
-        #     s1_val_cnt = len(s1_val_paths)
-        #     if s1_val_cnt == 0:
-        #         return Exception(f"Can NOT find *.wav files in {s1_path}/{VAL_DIR}")
-        #
-        #     print(f"total {len(s1_val_paths)} files in {s1_path}/{VAL_DIR}")
-        #
-        #     ret = process(
-        #         val_csv,
-        #         csv_columns=csv_columns,
-        #         mux=val_mux,
-        #         n_src=n_src,
-        #         addnoise=addnoise,
-        #         s1_fl_paths=s1_val_paths,
-        #         s2_fl_paths=s2_fl_paths,
-        #         s3_fl_paths=s3_fl_paths,
-        #         noise_fl_paths=noise_fl_paths,
-        #         savepath=val_dir,
-        #         ds_mode="val",
-        #         fix_len=fix_len,
-        #     )
-
         if isinstance(ret, Exception):
             return ret
 
@@ -232,32 +182,7 @@ def create_sep2mix_csv(
             addnoise=addnoise,
             fix_len=fix_len,
         )
-
-        # test_dir = make_dir(savepath, "test", n_src, addnoise)
-        # with open(savepath / f"test_mix_{n_src}.csv", "w") as test_csv:
-        #     s1_test_paths = list((s1_path / TEST_DIR).glob("*.wav"))
-        #     s1_test_cnt = len(s1_test_paths)
-        #     if s1_test_cnt == 0:
-        #         return Exception(f"Can NOT find *.wav files in {s1_path}/{TEST_DIR}")
-        #
-        #     print(f"total {len(s1_test_paths)} files in {s1_path}/{TEST_DIR}")
-        #
-        #     return process(
-        #         test_csv,
-        #         csv_columns=csv_columns,
-        #         mux=test_mux,
-        #         n_src=n_src,
-        #         addnoise=addnoise,
-        #         s1_fl_paths=s1_test_paths,
-        #         s2_fl_paths=s2_fl_paths,
-        #         s3_fl_paths=s3_fl_paths,
-        #         noise_fl_paths=noise_fl_paths,
-        #         savepath=test_dir,
-        #         ds_mode="test",
-        #         fix_len=fix_len,
-        #     )
     else:
-        s1_path = datapath / main_src
         # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
         s1_fl_paths = list(s1_path.glob("*.wav"))
         s1_fl_cnt = len(s1_fl_paths)
