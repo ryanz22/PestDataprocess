@@ -43,7 +43,7 @@ MIX3_CSV_COLUMNS = [
 ]
 
 
-def create_sep2mix_csv(
+def create_sep_dataset(
     datapath: pathlib.Path,
     savepath: pathlib.Path,
     main_src: str,
@@ -208,7 +208,7 @@ def ds_process(
     mux: int,
     addnoise: bool,
     fix_len: int,
-):
+) -> Exception | None:
     sub_dir = make_dir(savepath, dir_type, n_src, addnoise)
     with open(savepath / f"{dir_type}_mix_{n_src}.csv", "w") as sub_csv:
         # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
@@ -252,7 +252,7 @@ def process(
     """
     sepformer requires all soundtrack must be exact same length
     """
-    copy_file_fix_len = partial(copy_file, dest_path=savepath, fix_len=fix_len)
+    copy_file_fix_len = partial(copy_file, fix_len=fix_len)
 
     s1_fl_cnt = len(s1_fl_paths)
     if s1_fl_cnt == 0:
@@ -264,8 +264,8 @@ def process(
         for i, path in enumerate(s1_fl_paths):
             id = n * s1_fl_cnt + i
 
-            s1_wav = copy_file_fix_len("s1", path)
-            s2_wav = copy_file_fix_len("s2", random_pick(s2_fl_paths))
+            s1_wav = copy_file_fix_len(savepath, "s1", path)
+            s2_wav = copy_file_fix_len(savepath, "s2", random_pick(s2_fl_paths))
             mix_wav = savepath / "mix" / f"mix_{id}.wav"
 
             row = {
@@ -275,13 +275,15 @@ def process(
                 "s2_wav": f"$data_root/{ds_mode}/s2/" + str(s2_wav.name),
             }
             if n_src == 3:
-                s3_wav = copy_file_fix_len("s3", random_pick(s3_fl_paths))
+                s3_wav = copy_file_fix_len(savepath, "s3", random_pick(s3_fl_paths))
                 row["s3_wav"] = f"$data_root/{ds_mode}/s3/" + str(s3_wav.name)
             else:
                 s3_wav = None
 
             if addnoise:
-                noise_wav = copy_file_fix_len("noise", random_pick(noise_fl_paths))
+                noise_wav = copy_file_fix_len(
+                    savepath, "noise", random_pick(noise_fl_paths)
+                )
                 row["noise_wav"] = f"$data_root/{ds_mode}/noise/" + str(noise_wav.name)
             else:
                 noise_wav = None

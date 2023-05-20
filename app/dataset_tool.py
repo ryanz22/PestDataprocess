@@ -26,7 +26,7 @@ from dataprocess.util.data_process import read_snd_file
 
 from dataprocess.sound.preprocess import snd_peaks, normalize
 
-from dataprocess.sound.sep_data import create_sep2mix_csv
+from dataprocess.sound.sep_data import create_sep_dataset
 
 
 @click.group()
@@ -361,12 +361,15 @@ def sep_data(
 
     if train_ds is not None:
         if not (pathlib.Path(in_dir) / main_src / "train").exists():
-            print(
+            # print(
+            #     f"when --train_ds is specified, main_src folder must contain train/val/test subfolders"
+            # )
+            # return
+            raise click.ClickException(
                 f"when --train_ds is specified, main_src folder must contain train/val/test subfolders"
             )
-            return
 
-    ret = create_sep2mix_csv(
+    ret = create_sep_dataset(
         pathlib.Path(in_dir),
         pathlib.Path(out_dir),
         main_src=main_src,
@@ -377,7 +380,11 @@ def sep_data(
         train_ds=train_ds,
         fix_len=fix_len,
     )
-    print(ret)
+    match ret:
+        case Exception():
+            raise click.ClickException(str(ret))
+        case _:
+            print(ret)
 
 
 @cli.command(help="Generate src sep dataset")
