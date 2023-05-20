@@ -10,6 +10,7 @@ from enum import Enum
 
 # from io import TextIOWrapper
 from typing import TextIO
+from functools import partial
 
 from dataprocess.sound.preprocess import mix as lib_mix
 
@@ -107,7 +108,7 @@ def create_sep2mix_csv(
         print(f"source 2 path: total {s2_fl_cnt} files in {s2_path}")
         # print(f"\n\nS2 files:\n{s2_fl_paths}")
         s3_fl_paths = []
-    else:
+    else:  # mix3
         csv_columns = MIX3_CSV_COLUMNS
         s3_path = datapath / GH2_DIR
 
@@ -135,52 +136,38 @@ def create_sep2mix_csv(
     if train_ds is not None:
         train_mux, val_mux, test_mux = train_ds
 
-        ret = ds_process(
+        ds_process_partial = partial(
+            ds_process,
             s1_path=s1_path,
             s2_fl_paths=s2_fl_paths,
             s3_fl_paths=s3_fl_paths,
             noise_fl_paths=noise_fl_paths,
             savepath=savepath,
             csv_columns=csv_columns,
+            n_src=n_src,
+            addnoise=addnoise,
+            fix_len=fix_len,
+        )
+
+        ret = ds_process_partial(
             dir_type=TRAIN_DIR,
-            n_src=n_src,
             mux=train_mux,
-            addnoise=addnoise,
-            fix_len=fix_len,
         )
 
         if isinstance(ret, Exception):
             return ret
 
-        ret = ds_process(
-            s1_path=s1_path,
-            s2_fl_paths=s2_fl_paths,
-            s3_fl_paths=s3_fl_paths,
-            noise_fl_paths=noise_fl_paths,
-            savepath=savepath,
-            csv_columns=csv_columns,
+        ret = ds_process_partial(
             dir_type=VAL_DIR,
-            n_src=n_src,
             mux=val_mux,
-            addnoise=addnoise,
-            fix_len=fix_len,
         )
 
         if isinstance(ret, Exception):
             return ret
 
-        return ds_process(
-            s1_path=s1_path,
-            s2_fl_paths=s2_fl_paths,
-            s3_fl_paths=s3_fl_paths,
-            noise_fl_paths=noise_fl_paths,
-            savepath=savepath,
-            csv_columns=csv_columns,
+        return ds_process_partial(
             dir_type=TEST_DIR,
-            n_src=n_src,
             mux=test_mux,
-            addnoise=addnoise,
-            fix_len=fix_len,
         )
     else:
         # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
@@ -265,6 +252,8 @@ def process(
     """
     sepformer requires all soundtrack must be exact same length
     """
+    copy_file_fix_len = partial(copy_file, dest_path=savepath, fix_len=fix_len)
+
     s1_fl_cnt = len(s1_fl_paths)
     if s1_fl_cnt == 0:
         return Exception("empty s1_fl_paths")
@@ -275,10 +264,8 @@ def process(
         for i, path in enumerate(s1_fl_paths):
             id = n * s1_fl_cnt + i
 
-            s1_wav = copy_file(savepath, "s1", path, fix_len=fix_len)
-            s2_wav = copy_file(
-                savepath, "s2", random_pick(s2_fl_paths), fix_len=fix_len
-            )
+            s1_wav = copy_file_fix_len("s1", path)
+            s2_wav = copy_file_fix_len("s2", random_pick(s2_fl_paths))
             mix_wav = savepath / "mix" / f"mix_{id}.wav"
 
             row = {
@@ -288,17 +275,13 @@ def process(
                 "s2_wav": f"$data_root/{ds_mode}/s2/" + str(s2_wav.name),
             }
             if n_src == 3:
-                s3_wav = copy_file(
-                    savepath, "s3", random_pick(s3_fl_paths), fix_len=fix_len
-                )
+                s3_wav = copy_file_fix_len("s3", random_pick(s3_fl_paths))
                 row["s3_wav"] = f"$data_root/{ds_mode}/s3/" + str(s3_wav.name)
             else:
                 s3_wav = None
 
             if addnoise:
-                noise_wav = copy_file(
-                    savepath, "noise", random_pick(noise_fl_paths), fix_len=fix_len
-                )
+                noise_wav = copy_file_fix_len("noise", random_pick(noise_fl_paths))
                 row["noise_wav"] = f"$data_root/{ds_mode}/noise/" + str(noise_wav.name)
             else:
                 noise_wav = None
