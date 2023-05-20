@@ -49,7 +49,8 @@ def create_sep_dataset(
     main_src: str,
     mux: int,
     n_src: int,
-    bird_or_gh: str = "bird",
+    second_src: str = "bird",
+    third_src: str = "cricket",
     addnoise: bool = False,
     train_ds: tuple[int, int, int] = None,
     fix_len: int = 0,
@@ -88,16 +89,7 @@ def create_sep_dataset(
     ID, mix_wav, s1_wav, s2_wav, s3_wav, noise_wav
     """
     s1_path = datapath / main_src
-
-    match bird_or_gh:
-        case "bird":
-            s2_path = datapath / BIRD_DIR
-        case "gh":
-            s2_path = datapath / GH2_DIR
-        case "cricket":
-            s2_path = datapath / CRICKET_DIR
-        case _:
-            return Exception(f"unknown 2nd source type: {bird_or_gh}")
+    s2_path = pick_src(second_src, datapath)
 
     if n_src == 2:
         csv_columns = MIX2_CSV_COLUMNS
@@ -110,7 +102,7 @@ def create_sep_dataset(
         s3_fl_paths = []
     else:  # mix3
         csv_columns = MIX3_CSV_COLUMNS
-        s3_path = datapath / GH2_DIR
+        s3_path = pick_src(third_src, datapath)
 
         # s2_fl_paths = [f.name for f in s2_path.glob("*.wav")]
         s2_fl_paths = list(s2_path.glob("*.wav"))
@@ -396,3 +388,15 @@ def copy_file(
             dest_file.write_bytes(src_file.read_bytes())
 
     return dest_file
+
+
+def pick_src(src: str, datapath: pathlib.Path) -> pathlib.Path | Exception:
+    match src:
+        case "bird":
+            return datapath / BIRD_DIR
+        case "gh":
+            return datapath / GH2_DIR
+        case "cricket":
+            return datapath / CRICKET_DIR
+        case _:
+            return Exception(f"unknown source type: {src}")

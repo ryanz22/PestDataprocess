@@ -328,11 +328,18 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     help="specify the fix length of soundtrack, such as 44100",
 )
 @click.option(
-    "--b_g_c",
+    "--second_src",
     type=click.Choice(["bird", "gh", "cricket"]),
     required=True,
     default="bird",
-    help="specify the 2nd source is bird, cricket or grasshopper, the 3rd source of mix3 will be always gh",
+    help="specify the 2nd source, default is bird",
+)
+@click.option(
+    "--third_src",
+    type=click.Choice(["bird", "gh", "cricket"]),
+    required=True,
+    default="cricket",
+    help="specify the 3rd source, default is cricket",
 )
 @click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
 @click.option(
@@ -347,7 +354,8 @@ def sep_data(
     out_dir: str,
     mux: int,
     n_src: int,
-    b_g_c: str,
+    second_src: str,
+    third_src: str,
     noise: bool,
     train_ds: tuple[int, int, int],
     fix_len: int,
@@ -375,7 +383,8 @@ def sep_data(
         main_src=main_src,
         n_src=n_src,
         mux=mux,
-        bird_or_gh=b_g_c,
+        second_src=second_src,
+        third_src=third_src,
         addnoise=noise,
         train_ds=train_ds,
         fix_len=fix_len,
