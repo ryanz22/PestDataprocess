@@ -16,7 +16,8 @@ from dataprocess.sound.preprocess import mix as lib_mix
 
 # GH1_DIR = "gh-18"
 # GH1_DIR = "gh-mini"
-GH2_DIR = "gh-21"
+# GH2_DIR = "gh-21"
+# DIFF_GH_DIR = "gh-15"
 BIRD_DIR = "bird"
 DRONE_DIR = "drone"
 CRICKET_DIR = "cricket"
@@ -47,6 +48,7 @@ def create_sep_dataset(
     datapath: pathlib.Path,
     savepath: pathlib.Path,
     main_src: str,
+    gh_src: str,
     mux: int,
     n_src: int,
     second_src: str = "bird",
@@ -89,7 +91,7 @@ def create_sep_dataset(
     ID, mix_wav, s1_wav, s2_wav, s3_wav, noise_wav
     """
     s1_path = datapath / main_src
-    s2_path = pick_src(second_src, datapath)
+    s2_path = pick_src(second_src, datapath, gh_src)
 
     if n_src == 2:
         csv_columns = MIX2_CSV_COLUMNS
@@ -390,12 +392,12 @@ def copy_file(
     return dest_file
 
 
-def pick_src(src: str, datapath: pathlib.Path) -> pathlib.Path | Exception:
+def pick_src(src: str, datapath: pathlib.Path, gh_dir: str) -> pathlib.Path | Exception:
     match src:
         case "bird":
             return datapath / BIRD_DIR
         case "gh":
-            return datapath / GH2_DIR
+            return datapath / gh_dir
         case "cricket":
             return datapath / CRICKET_DIR
         case _:

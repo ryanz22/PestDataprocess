@@ -12,11 +12,11 @@ try mix3 clean where drone as the 3rd src or mix2 noise where drone as noise.
 
 ### raw
 
-contains the original sound tracks. Use slice and peaks to generate 'raw-ds'.
+contains the original soundtracks. Use slice and peaks to generate 'raw-ds'.
 
 ### raw-ds
 
-contains the 2 second sound tracks.
+contains the 2 second soundtracks. gh-18 and gh-21 are the same family, gh-15 is a different family.
 
 ### aug-ds
 

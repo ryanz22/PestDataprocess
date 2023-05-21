@@ -321,6 +321,13 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     help="the main source folder name, must specify a folder contains train/val/test subfoloder when used with --train_ds option",
 )
 @click.option(
+    "--gh_src",
+    type=str,
+    required=False,
+    default="gh-21",
+    help="the grasshopper source folder name, default is gh-21",
+)
+@click.option(
     "--fix_len",
     type=int,
     required=False,
@@ -360,6 +367,7 @@ def sep_data(
     train_ds: tuple[int, int, int],
     fix_len: int,
     main_src: str,
+    gh_src: str,
 ):
     print(f"input folder: {in_dir}")
     print(f"output folder: {out_dir}")
@@ -381,6 +389,7 @@ def sep_data(
         pathlib.Path(in_dir),
         pathlib.Path(out_dir),
         main_src=main_src,
+        gh_src=gh_src,
         n_src=n_src,
         mux=mux,
         second_src=second_src,
