@@ -377,7 +377,7 @@ def mix(in_fn: Tuple[str, str], out_fn: str):
     "-b",
     "--bg",
     type=click.Path(exists=True, dir_okay=True, file_okay=False),
-    required=True,
+    required=False,
 )
 @click.option(
     "-c",
@@ -394,7 +394,8 @@ def mix(in_fn: Tuple[str, str], out_fn: str):
     required=True,
     type=click.Path(exists=True, dir_okay=True, file_okay=False),
 )
-def augment(in_fn: str, bg: str, count: int, out: str):
+@click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
+def augment(in_fn: str, bg: str, count: int, out: str, noise: bool):
     p = pathlib.Path(in_fn)
 
     if p.is_dir():
@@ -402,11 +403,11 @@ def augment(in_fn: str, bg: str, count: int, out: str):
         wav_list = [f for f in p.glob("*.wav")]
         pyf.seq(wav_list).for_each(print)
         pyf.seq(wav_list).for_each(
-            lambda f: augment_single(f, count=count, bg=bg, out=out)
+            lambda f: augment_single(f, count=count, bg=bg, out=out, noise=noise)
         )
     else:
         print(f"Augment input file: {in_fn}")
-        augment_single(in_fn, count=count, bg=bg, out=out)
+        augment_single(in_fn, count=count, bg=bg, out=out, noise=noise)
 
 
 @cli.command(
