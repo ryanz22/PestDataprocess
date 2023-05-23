@@ -104,7 +104,7 @@ def create_sep_dataset(
         s3_fl_paths = []
     else:  # mix3
         csv_columns = MIX3_CSV_COLUMNS
-        s3_path = pick_src(third_src, datapath)
+        s3_path = pick_src(third_src, datapath, gh_src)
 
         # s2_fl_paths = [f.name for f in s2_path.glob("*.wav")]
         s2_fl_paths = list(s2_path.glob("*.wav"))
@@ -393,6 +393,10 @@ def copy_file(
 
 
 def pick_src(src: str, datapath: pathlib.Path, gh_dir: str) -> pathlib.Path | Exception:
+    """
+    str: specify which types of soundtrack
+    gh_dir: point to the grasshopper folder
+    """
     match src:
         case "bird":
             return datapath / BIRD_DIR
