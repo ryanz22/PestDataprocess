@@ -385,9 +385,15 @@ def sep_data(
                 f"when --train_ds is specified, main_src folder must contain train/val/test subfolders"
             )
 
+    out_p = pathlib.Path(out_dir)
+    if any(out_p.iterdir()):
+        raise click.ClickException(
+            f"output folder {out_p} has content already, please double check"
+        )
+
     ret = create_sep_dataset(
         pathlib.Path(in_dir),
-        pathlib.Path(out_dir),
+        out_p,
         main_src=main_src,
         gh_src=gh_src,
         n_src=n_src,
