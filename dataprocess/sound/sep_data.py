@@ -115,7 +115,7 @@ def create_sep_dataset(
         # s3_fl_paths = [f.name for f in s3_path.glob("*.wav")]
         s3_fl_paths = list(s3_path.glob("*.wav"))
         s3_fl_cnt = len(s3_fl_paths)
-        print(f"total {s3_fl_cnt} files in {s2_path}")
+        print(f"total {s3_fl_cnt} files in {s3_path}")
 
     if addnoise:
         noise_path = datapath / DRONE_DIR
