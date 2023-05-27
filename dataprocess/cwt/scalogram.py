@@ -46,7 +46,7 @@ def fft_process(d2, sr):
     from scipy.fft import rfft, rfftfreq
 
     N = len(d2)
-    print(f"N: {N}")
+    # print(f"N: {N}")
     yf = rfft(d2)
     xf = rfftfreq(N, 1 / sr)
     # yf = np.fft.rfft(d2)
