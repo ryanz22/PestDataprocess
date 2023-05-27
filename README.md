@@ -5,13 +5,13 @@
 [Getting Started with Conda or Poetry for Data Science Projects]
 (<https://medium.com/semantixbr/getting-started-with-conda-or-poetry-for-data-science-projects-1b3add43956d#:~:text=Conda%20and%20Poetry%20stand%20out,environment%20management%20for%20any%20language>.)
 
-## Linux env setup
+### Linux env setup
 
 ```sh
 sudo apt install libcairo2-dev libsndfile-dev gobject-introspection libgirepository1.0-dev libsox-dev ffmpeg
 ```
 
-## Macbook env setup
+### Macbook env setup
 
 ```sh
 brew install cairo gobject-introspection libsndfile sox
@@ -21,7 +21,7 @@ sudo ln -s /opt/homebrew/include/sox.h /Library/Developer/CommandLineTools/SDKs/
 sudo ln -s /opt/homebrew/lib/libsox.a /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk/usr/lib/libsox.a
 ```
 
-### How to run
+## How to run
 
 ```sh
 PYTHONPATH=. poetry run python3 app/snd_tool.py
@@ -33,6 +33,12 @@ rename all files in a folder from x.y to bx.y
 
 ```sh
 for f in *.jpg; do mv $f "b$f"; done
+```
+
+### How to test
+
+```shell
+PYTHONPATH=. poetry run pytest tests/test_snd_sep.py
 ```
 
 ## Wavelet

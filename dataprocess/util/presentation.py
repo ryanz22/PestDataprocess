@@ -25,8 +25,11 @@ class Meta:
     has_noise: bool
     mix_fn: Path
     s1_fn: Path
+    s1_desc: str | None
     s2_fn: Path
+    s2_desc: str | None
     s3_fn: Path | None
+    s3_desc: str | None
     est_s1_fn: Path
     est_s2_fn: Path
     est_s3_fn: Path | None
@@ -34,52 +37,104 @@ class Meta:
 
 
 def load_meta(fp: Path) -> Result[Meta, Exception]:
+    parent = fp.parent
     with open(fp, "r") as file:
-        yaml_data = yaml.load(file, Loader=yaml.FullLoader)
-        title = yaml_data["title"]
-        description = yaml_data["description"]
-        src_cnt = yaml_data["src_cnt"]
-        noise = yaml_data["has_noise"]
-        mix_fn = yaml_data["src_mappings"]["mix"]
-        s1_fn = yaml_data["src_mappings"]["s1"]
-        s2_fn = yaml_data["src_mappings"]["s2"]
-        est_s1_fn = yaml_data["src_mappings"]["est_s1"]
-        est_s2_fn = yaml_data["src_mappings"]["est_s2"]
+        # yaml_data = yaml.load(file, Loader=yaml.FullLoader)
+        yaml_data = file.read()
+        return parse_meta(yaml_data, parent)
 
-        fn_list = [mix_fn, s1_fn, s2_fn, est_s1_fn, est_s2_fn]
 
-        noise_fn = None
-        if noise:
-            noise_fn = yaml_data["src_mappings"]["noise"]
-            fn_list.append(noise_fn)
+def parse_meta(
+    yaml_str: str, parent: Path, validate: bool = True
+) -> Result[Meta, Exception]:
+    yaml_data = yaml.safe_load(yaml_str)
+    title = yaml_data["title"]
+    description = yaml_data["description"]
+    src_cnt = yaml_data["src_cnt"]
+    noise = yaml_data["has_noise"]
 
-        s3_fn, est_s3_fn = None, None
-        if src_cnt == 3:
-            s3_fn = yaml_data["src_mappings"]["s3"]
-            est_s3_fn = yaml_data["src_mappings"]["est_s3"]
-            fn_list.extend([s3_fn, est_s3_fn])
+    # for file existence valiation
+    fn_list = []
 
-        parent = fp.parent
-        ret = pyfn.seq(fn_list).filter(lambda f: not (parent / f).exists())
+    mix_fn, s1_fn, s2_fn, s1_desc, s2_desc = None, None, None, None, None
+
+    mappings = yaml_data["src_mappings"]
+    for key in mappings:
+        val = mappings.get(key, None)
+        match key:
+            case "mix":
+                mix_fn = parent / val
+                fn_list.append(mix_fn)
+            case "s1":
+                s1_fn = parent / val
+                fn_list.append(s1_fn)
+            case "s2":
+                s2_fn = parent / val
+                fn_list.append(s2_fn)
+            case "est_s1":
+                est_s1_fn = parent / val
+                fn_list.append(est_s1_fn)
+            case "est_s2":
+                est_s2_fn = parent / val
+                fn_list.append(est_s2_fn)
+            case "s1_desc":
+                s1_desc = val
+            case "s2_desc":
+                s2_desc = val
+            case _:
+                pass  # noise and s3 will be handled next
+
+    noise_fn = None
+    if noise:
+        noise_fn = mappings.get("noise", None)
+        if noise_fn is None:
+            return Failure(Exception("Missing noise wav"))
+        else:
+            noise_fn = parent / noise_fn
+        fn_list.append(noise_fn)
+
+    s3_fn, est_s3_fn, s3_desc = None, None, None
+    if src_cnt == 3:
+        s3_fn = mappings.get("s3", None)
+        if s3_fn is None:
+            return Failure(Exception("Missing s3 wav"))
+        else:
+            s3_fn = parent / s3_fn
+
+        s3_desc = mappings.get("s3_desc", None)
+
+        est_s3_fn = mappings.get("est_s3", None)
+        if est_s3_fn is None:
+            return Failure(Exception("Missing est_s3 wav"))
+        else:
+            est_s3_fn = parent / est_s3_fn
+
+        fn_list.extend([s3_fn, est_s3_fn])
+
+    if validate:
+        ret = pyfn.seq(fn_list).filter(lambda f: not f.exists())
         if ret.non_empty():
             return Failure(Exception(ret.make_string("\n")))
 
-        return Success(
-            Meta(
-                title,
-                description,
-                src_cnt,
-                noise,
-                parent / mix_fn,
-                parent / s1_fn,
-                parent / s2_fn,
-                parent / s3_fn if s3_fn else None,
-                parent / est_s1_fn,
-                parent / est_s2_fn,
-                parent / est_s3_fn if est_s3_fn else None,
-                parent / noise_fn if noise_fn else None,
-            )
+    return Success(
+        Meta(
+            title=title,
+            description=description,
+            src_cnt=src_cnt,
+            has_noise=noise,
+            mix_fn=mix_fn,
+            s1_fn=s1_fn,
+            s1_desc=s1_desc,
+            s2_fn=s2_fn,
+            s2_desc=s2_desc,
+            s3_fn=parent / s3_fn if s3_fn else None,
+            s3_desc=s3_desc,
+            est_s1_fn=est_s1_fn,
+            est_s2_fn=est_s2_fn,
+            est_s3_fn=est_s3_fn if est_s3_fn else None,
+            noise_fn=noise_fn if noise_fn else None,
         )
+    )
 
 
 @safe
@@ -101,30 +156,38 @@ def plot(meta: Meta) -> Result[str, Exception]:
     display(Markdown("### Mix sound"))
     src_plot(meta.mix_fn)
 
-    display(Markdown("### Source one sound"))
+    s1_desc = f" - {meta.s1_desc}" if meta.s1_desc else ""
+    display(Markdown(f"### 1st source sound{s1_desc}"))
     src_plot(meta.s1_fn)
-    # d2, sr2 = librosa.load(meta.s1_fn, sr=None)
-    # display(IPython.display.Audio(data=d2, rate=sr2))
 
-    # plot_all(d2, sr=sr2, out_fn=None, threshold=-60, show_scale=True)
-    # plt.show()
-
-    display(Markdown("### Estimated one sound"))
+    display(Markdown(f"### 1st estimated sound{s1_desc}"))
     src_plot(meta.est_s1_fn)
 
-    # d3, sr3 = librosa.load(meta.est_s1_fn, sr=None)
-    # display(IPython.display.Audio(data=d3, rate=sr3))
+    s2_desc = f" - {meta.s2_desc}" if meta.s2_desc else ""
+    display(Markdown(f"### 2nd source sound{s2_desc}"))
+    src_plot(meta.s2_fn)
 
-    # plot_all(d3, sr=sr3, out_fn=None, threshold=-60, show_scale=True)
-    # plt.show()
+    display(Markdown(f"### 2nd estimated sound{s2_desc}"))
+    src_plot(meta.est_s2_fn)
+
+    if meta.src_cnt == 3:
+        s3_desc = f" - {meta.s3_desc}" if meta.s3_desc else ""
+        display(Markdown(f"### 3rd source sound{s3_desc}"))
+        src_plot(meta.s3_fn)
+
+        display(Markdown(f"### 3rd estimated sound{s3_desc}"))
+        src_plot(meta.est_s3_fn)
+
+    if meta.has_noise:
+        display(Markdown("### Noise sound"))
+        src_plot(meta.noise_fn)
 
     return Success("plot good")
 
 
-def process(in_dir: Path) -> Result[str, Exception]:
-    META_FN = "meta.yaml"
+def process(meta: Path) -> Result[str, Exception]:
     return flow(
-        in_dir / META_FN,
+        meta,
         load_meta,
         bind(plot),
     )
