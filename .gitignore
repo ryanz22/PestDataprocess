@@ -130,6 +130,7 @@ dmypy.json
 
 # Kevin
 data/sound/tmp
+data/sound/support
 data/image/tmp
 .vscode
 

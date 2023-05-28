@@ -22,6 +22,7 @@ from dataprocess.sound.preprocess import (
     resample as resam,
     is_stereo_sound,
     snd_peaks,
+    mix as lib_mix,
 )
 from dataprocess.sound.filter_util import load_audio_file, freq_filter
 from dataprocess.util.data_process import read_snd_file
@@ -66,22 +67,37 @@ def mono(in_fn: str):
         print("this is a mono sound track")
 
 
-@cli.command(help="normalize input sound file and output to the same location")
+@cli.command(
+    help="normalize (mono, denoise and default 22.5KHz) input sound file and output to the same location"
+)
 @click.option(
     "-f",
     "--in_fn",
     required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help="convert any types of sound to mono 22050 wav",
+    type=click.Path(exists=True, dir_okay=True),
+    help="convert any types of sound to mono (default 22050) and denoised wav",
 )
 @click.option("-t", "--tsr", default=22050)
-def normalize(in_fn: str, tsr: int):
-    data, sr = librosa.load(in_fn, sr=None, mono=True)
-    data2, sr2 = norm(data, sr, tsr)
-    out_fn = append_suffix(in_fn, "mono_22050")
-    if pathlib.Path(in_fn).suffix != ".wav":
-        out_fn = change_ext(out_fn, ".wav")
-    sf.write(out_fn, data2, sr2)
+@click.option("--ext", type=str, default="mp3", required=False)
+def normalize(in_fn: str, tsr: int, ext: str):
+    def conv(fn: str):
+        data, sr = librosa.load(fn, sr=None, mono=True)
+        data2, sr2 = norm(data, sr, tsr)
+        out_fn = append_suffix(fn, f"mono_{tsr}_denoised")
+        if pathlib.Path(fn).suffix != ".wav":
+            out_fn = change_ext(out_fn, ".wav")
+        sf.write(out_fn, data2, sr2)
+
+    path = pathlib.Path(in_fn)
+    if path.is_file():
+        conv(in_fn)
+    elif path.is_dir():
+        print(f"search .{ext} files in folder {in_fn}")
+        fn_list = [str(fn) for fn in path.glob(f"**/*.{ext}")]
+        print(fn_list)
+        pyf.seq(fn_list).for_each(conv)
+    else:
+        print(f"{path} is neither a file nor a directory")
 
 
 @cli.command(help="resample input sound file and output to the same location")
@@ -236,7 +252,12 @@ def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
 @click.option(
     "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=False)
 )
-@click.option("--sr", type=int, required=False)
+@click.option(
+    "--sr",
+    type=int,
+    required=False,
+    help="sr will be retrieved from the sound track if not specified",
+)
 @click.option("--back", type=float, required=True, default=0.2)
 @click.option("--forth", type=float, required=True, default=2.0)
 @click.option(
@@ -298,7 +319,7 @@ def stretch(in_fn: str, in_dir: str, rate: float, out_dir: str):
         print("must specify either in_fn or in_dir")
 
 
-@cli.command(help="Convert to wav file")
+@cli.command(help="Convert other types (mp3 default) to wav file")
 @click.option(
     "-f",
     "--in_fn",
@@ -337,25 +358,12 @@ def to_wav(in_fn: str, ext: str):
 )
 def mix(in_fn: Tuple[str, str], out_fn: str):
     fn_1, fn_2 = in_fn
-    y_1, sr_1 = librosa.load(fn_1, sr=None, mono=True)
-    y_2, sr_2 = librosa.load(fn_2, sr=None, mono=True)
-
-    if sr_1 != sr_2:
-        print(f"{fn_1} SR {sr_1} is different from {fn_2} SR {sr_2}")
-        return
-
-    dur_1 = librosa.get_duration(y=y_1, sr=sr_1)
-    dur_2 = librosa.get_duration(y=y_2, sr=sr_2)
-
-    if dur_1 != dur_2:
-        print(f"{fn_1} duration {dur_1} is different from {fn_2} duration {dur_2}")
-        new_dur = dur_1 if dur_1 < dur_2 else dur_2
-        print(f"shorter duration {new_dur} will be used")
-
-    y_1, sr_1 = librosa.load(fn_1, sr=None, mono=True, duration=new_dur)
-    y_2, sr_2 = librosa.load(fn_2, sr=None, mono=True, duration=new_dur)
-    y_mix = y_1 + y_2
-    sf.write(out_fn, y_mix, sr_1)
+    ret = lib_mix(fn_1, fn_2)
+    if isinstance(ret, Exception):
+        print(ret)
+    else:
+        y_mix, sr = ret
+        sf.write(out_fn, y_mix, sr)
 
 
 @cli.command(help="Augment input sound file or folder")
@@ -369,7 +377,7 @@ def mix(in_fn: Tuple[str, str], out_fn: str):
     "-b",
     "--bg",
     type=click.Path(exists=True, dir_okay=True, file_okay=False),
-    required=True,
+    required=False,
 )
 @click.option(
     "-c",
@@ -386,7 +394,8 @@ def mix(in_fn: Tuple[str, str], out_fn: str):
     required=True,
     type=click.Path(exists=True, dir_okay=True, file_okay=False),
 )
-def augment(in_fn: str, bg: str, count: int, out: str):
+@click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
+def augment(in_fn: str, bg: str, count: int, out: str, noise: bool):
     p = pathlib.Path(in_fn)
 
     if p.is_dir():
@@ -394,11 +403,11 @@ def augment(in_fn: str, bg: str, count: int, out: str):
         wav_list = [f for f in p.glob("*.wav")]
         pyf.seq(wav_list).for_each(print)
         pyf.seq(wav_list).for_each(
-            lambda f: augment_single(f, count=count, bg=bg, out=out)
+            lambda f: augment_single(f, count=count, bg=bg, out=out, noise=noise)
         )
     else:
         print(f"Augment input file: {in_fn}")
-        augment_single(in_fn, count=count, bg=bg, out=out)
+        augment_single(in_fn, count=count, bg=bg, out=out, noise=noise)
 
 
 @cli.command(

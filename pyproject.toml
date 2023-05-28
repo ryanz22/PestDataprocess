@@ -44,6 +44,7 @@ audiomentations = "^0.28.0"
 pydub = "^0.25.1"
 peakdetect = "^1.2"
 more-itertools = "^9.0.0"
+returns = "^0.20.0"
 
 [tool.poetry.dev-dependencies]
 

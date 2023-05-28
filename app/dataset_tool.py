@@ -26,6 +26,8 @@ from dataprocess.util.data_process import read_snd_file
 
 from dataprocess.sound.preprocess import snd_peaks, normalize
 
+from dataprocess.sound.sep_data import create_sep_dataset
+
 
 @click.group()
 def cli():
@@ -291,6 +293,155 @@ def xeno_canto_normalize(in_dir: str, out_dir: str, sr: int, tsr: int):
 def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     ext = [".wav", ".mp3"]
     return list(filter(lambda p: p.suffix in ext, p.parent.glob("**/*")))
+
+
+@cli.command(help="Generate src sep dataset")
+@click.option(
+    "-i",
+    "--in_dir",
+    required=True,
+    type=click.Path(exists=True, dir_okay=True),
+    help="the raw dataset folder",
+)
+@click.option(
+    "-o", "--out_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+# @click.option("--sr", type=int, required=True)
+# @click.option("--tsr", type=int, required=True)
+@click.option(
+    "--mux", type=int, required=True, default=1, help="multiplexer of mix sample count"
+)
+@click.option(
+    "--n_src", type=int, required=True, default=2, help="source count, support 2 or 3"
+)
+@click.option(
+    "--main_src",
+    type=str,
+    required=True,
+    help="the main source folder name, must specify a folder contains train/val/test subfoloder when used with --train_ds option",
+)
+@click.option(
+    "--gh_src",
+    type=str,
+    required=False,
+    default="gh-21",
+    help="the grasshopper source folder name, default is gh-21",
+)
+@click.option(
+    "--fix_len",
+    type=int,
+    required=False,
+    default=0,
+    help="specify the fix length of soundtrack, such as 44100",
+)
+@click.option(
+    "--second_src",
+    type=click.Choice(["bird", "gh", "cricket"]),
+    required=True,
+    default="bird",
+    help="specify the 2nd source, default is bird",
+)
+@click.option(
+    "--third_src",
+    type=click.Choice(["bird", "gh", "cricket"]),
+    required=True,
+    default="cricket",
+    help="specify the 3rd source, default is cricket",
+)
+@click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
+@click.option(
+    "--train_ds",
+    nargs=3,
+    type=int,
+    required=False,
+    help="sample count multiplexer of train, val, test",
+)
+def sep_data(
+    in_dir: str,
+    out_dir: str,
+    mux: int,
+    n_src: int,
+    second_src: str,
+    third_src: str,
+    noise: bool,
+    train_ds: tuple[int, int, int],
+    fix_len: int,
+    main_src: str,
+    gh_src: str,
+):
+    print(f"input folder: {in_dir}")
+    print(f"output folder: {out_dir}")
+    print(f"n_src: {n_src}")
+    print(f"noise: {noise}")
+    print(f"train_ds: {train_ds}")
+
+    if train_ds is not None:
+        if not (pathlib.Path(in_dir) / main_src / "train").exists():
+            # print(
+            #     f"when --train_ds is specified, main_src folder must contain train/val/test subfolders"
+            # )
+            # return
+            raise click.ClickException(
+                f"when --train_ds is specified, main_src folder must contain train/val/test subfolders"
+            )
+
+    out_p = pathlib.Path(out_dir)
+    if any(out_p.iterdir()):
+        raise click.ClickException(
+            f"output folder {out_p} has content already, please double check"
+        )
+
+    ret = create_sep_dataset(
+        pathlib.Path(in_dir),
+        out_p,
+        main_src=main_src,
+        gh_src=gh_src,
+        n_src=n_src,
+        mux=mux,
+        second_src=second_src,
+        third_src=third_src,
+        addnoise=noise,
+        train_ds=train_ds,
+        fix_len=fix_len,
+    )
+    match ret:
+        case Exception():
+            raise click.ClickException(str(ret))
+        case _:
+            print(ret)
+
+
+@cli.command(help="Generate src sep dataset")
+@click.option(
+    "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option(
+    "--fix_len",
+    type=int,
+    required=False,
+    default=0,
+    help="specify the fix length of soundtrack, such as 44100",
+)
+def check_len(in_dir: str, fix_len: int):
+    import librosa
+
+    if fix_len <= 0:
+        print(f"fix_len can NOT be less or equal than 0")
+        return
+
+    p = pathlib.Path(in_dir)
+    fl = list(p.glob("**/*.wav"))
+
+    def snd_len(fn: str) -> int:
+        y, _ = librosa.load(fn, sr=None, mono=True)
+        return len(y)
+
+    ret = (
+        pyf.seq(fl)
+        .map(lambda fn: (fn, snd_len(str(fn))))
+        .filter(lambda t: t[1] != fix_len)
+    )
+    print(f"soundtracks whose len is NOT {fix_len}:\n{pyf.seq(ret)}")
 
 
 if __name__ == "__main__":

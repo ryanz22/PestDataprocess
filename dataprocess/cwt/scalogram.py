@@ -46,7 +46,7 @@ def fft_process(d2, sr):
     from scipy.fft import rfft, rfftfreq
 
     N = len(d2)
-    print(f"N: {N}")
+    # print(f"N: {N}")
     yf = rfft(d2)
     xf = rfftfreq(N, 1 / sr)
     # yf = np.fft.rfft(d2)
@@ -246,7 +246,7 @@ def plot_fft(
 def plot_all(
     d,
     sr,
-    out_fn: str,
+    out_fn: str | None,
     threshold: int = -60,
     cmap: str = "magma",
     dim=("inch", 10, 10),
@@ -266,7 +266,7 @@ def plot_all(
     t, w, h = dim
     dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
 
-    print(f"plot graph as {dim_w}inch x {dim_h}inch")
+    # print(f"plot graph as {dim_w}inch x {dim_h}inch")
 
     fig, axes = plt.subplots(4, 1, figsize=(dim_w, dim_h), sharex=False)
     # fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
@@ -312,7 +312,11 @@ def plot_all(
         axes[3].set_axis_off()
 
     fig.subplots_adjust(hspace=0.5)
-    fig.savefig(out_fn)
+
+    if out_fn:
+        fig.savefig(out_fn)
+
+    return fig
 
 
 def plot_peaks(y, onset, peaks, sr: int):
