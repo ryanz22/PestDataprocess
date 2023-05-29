@@ -46,6 +46,7 @@ peakdetect = "^1.2"
 more-itertools = "^9.0.0"
 returns = "^0.20.0"
 setuptools = "^67.8.0"
+pandoc = "^2.3"
 
 [tool.poetry.dev-dependencies]
 
