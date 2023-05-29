@@ -444,43 +444,136 @@ def convert(in_fn: str, from_type: str, to_type: str):
             print(f"from {from_type} to {to_type} conversion is NOT supported")
 
 
-@cli.command(help="given a signal wav and a noise wav, calculate the SnR")
+@cli.command(help="given a signal wav and a noise wav, calculate the SnR and si-snr")
 @click.option(
-    "-s", "--signal", required=True, type=click.Path(exists=True, dir_okay=False)
+    "-s",
+    "--signal",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="when type is SNR, this file should be the signal, when SI-SNR, the estimated signal",
 )
 @click.option(
-    "-n", "--noise", required=True, type=click.Path(exists=True, dir_okay=False)
+    "-n",
+    "--noise",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="when type is SNR, this file should be the noise signal, when SI-SNR, the ground truth signal",
 )
-def snr(signal: str, noise: str):
-    print("Please make the sound tracks provided has the sound you want to calculate")
-    import scipy.io.wavfile as wavfile
+@click.option(
+    "--snr_type", type=click.Choice(["snr", "si-snr"]), required=True, default="snr"
+)
+def snr(signal: str, noise: str, snr_type):
+    """
+    SNR (Signal-to-Noise Ratio) is a measure commonly used to evaluate the quality
+    of a signal by comparing the strength of the desired signal to the level of
+    background noise or interference present in the signal.
 
-    # Load the audio file
-    signal_sr, signal_y = wavfile.read(signal)
-    noise_sr, noise_y = wavfile.read(noise)
+    To calculate SNR, you need to determine the power or energy of the desired
+    signal and the power or energy of the noise. The SNR is then obtained by
+    taking the ratio of these two values.
+
+    SI-SNR (Scale-Invariant Signal-to-Noise Ratio) is a metric commonly used to
+    evaluate the performance of source separation algorithms, particularly in the
+    field of speech and audio processing. It measures the quality of the separated
+    source signal by quantifying the ratio of the target source signal to the interference or noise.
+
+    To understand SI-SNR, let's break down its components:
+
+    Scale-Invariant: SI-SNR is scale-invariant, meaning it does not depend on the scale
+    of the audio signal. It focuses on the alignment and distortion of the separated
+    signal rather than its magnitude.
+
+    Signal: SI-SNR measures the similarity between the estimated source signal and
+    the reference (ground truth) source signal. The reference signal represents the
+    original, clean source that we aim to separate from a mixture.
+
+    Noise: SI-SNR considers any distortion or interference in the separated signal
+    as "noise" or unwanted components that are not part of the reference source signal.
+
+    The SI-SNR is calculated using the following steps:
+
+    Compute the numerator: Multiply the reference source signal and the estimated
+    source signal by a scaling factor to align their energies. The scaling factor is
+    chosen to maximize the correlation between the two signals.
+
+    Compute the denominator: Calculate the energy of the "noise" component, which
+    represents the difference between the aligned estimated source signal and the reference source signal.
+
+    Calculate the ratio: Divide the numerator by the denominator to obtain the SI-SNR.
+
+    SI-SNR is typically expressed in decibels (dB) and can take both positive and
+    negative values. A higher positive SI-SNR value indicates a better separation
+    performance, as it means the estimated source signal is more aligned with the
+    reference source signal, while minimizing the interference or noise.
+
+    In summary, SI-SNR is a metric that quantifies the quality of the separation
+    between a target source and the interference or noise in an audio signal.
+    It provides a measure of how well a source separation algorithm can extract a
+    desired source from a mixture.
+    """
+
+    print("Please make the sound tracks provided has the sound you want to calculate")
+    # import scipy.io.wavfile as wavfile
+    #
+    # # Load the audio file
+    # signal_sr, signal_y = wavfile.read(signal)
+    # noise_sr, noise_y = wavfile.read(noise)
+
+    signal_y, signal_sr = librosa.load(signal, sr=None, mono=True)
+    noise_y, noise_sr = librosa.load(noise, sr=None, mono=True)
 
     if signal_sr != noise_sr:
-        print(
+        raise click.ClickException(
             f"signal wav sr [{signal_sr}] is different from noise wav sr [{noise_sr}]"
         )
-        return
 
-    if len(signal_y) != len(noise_y):
-        print("two wav files must have the equal length")
-        return
+    ls, ln = len(signal_y), len(noise_y)
+    if ls != ln:
+        print(
+            f"two wav files don't have the equal length (signal [{ls}], noise [{ln}], the shorter length will be used"
+        )
+        if ls > ln:
+            print(f"noise is the shorter one and will be used")
+            signal_y = signal_y[:ln]
+        else:
+            print(f"signal is the shorter one and will be used")
+            noise_y = noise_y[:ls]
 
-    # Calculate the RMS value of the noise
-    noise_rms = np.sqrt(np.mean(noise_y**2))
+    match snr_type:
+        case "snr":
+            # Calculate the RMS value of the noise
+            noise_rms = np.sqrt(np.mean(noise_y**2))
 
-    # Calculate the RMS value of the signal
-    signal_rms = np.sqrt(np.mean(signal_y**2))
+            # Calculate the RMS value of the signal
+            signal_rms = np.sqrt(np.mean(signal_y**2))
 
-    # Calculate the SNR in dB
-    snr = 20 * np.log10(signal_rms / noise_rms)
-    if snr < 0.0:
-        print("Please check if the wav files have the sound and equal length")
-    else:
-        print(f"snr is {snr}")
+            # Calculate the SNR in dB
+            snr = 20 * np.log10(signal_rms / noise_rms)
+            if snr < 0.0:
+                print("Please check if the wav files have the sound and equal length")
+            else:
+                print(f"snr is {snr}")
+        case "si-snr":
+            estimated, reference = signal_y, noise_y
+            # Zero-mean norm for reference
+            mean_reference = np.mean(reference)
+            reference -= mean_reference
+
+            # Projection of estimated onto reference
+            projection = (
+                np.dot(reference, estimated)
+                * reference
+                / np.linalg.norm(reference) ** 2
+            )
+
+            # Interference signal
+            interference = estimated - projection
+
+            # Compute SI-SNR
+            si_snr = 10 * np.log10(np.sum(projection**2) / np.sum(interference**2))
+            print(f"si-snr is {si_snr}")
+        case _:
+            raise click.ClickException(f"Unknown snr_type: [{snr_type}]")
 
 
 if __name__ == "__main__":
