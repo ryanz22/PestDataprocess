@@ -127,7 +127,7 @@ def parse_meta(
             s1_desc=s1_desc,
             s2_fn=s2_fn,
             s2_desc=s2_desc,
-            s3_fn=parent / s3_fn if s3_fn else None,
+            s3_fn=s3_fn if s3_fn else None,
             s3_desc=s3_desc,
             est_s1_fn=est_s1_fn,
             est_s2_fn=est_s2_fn,
