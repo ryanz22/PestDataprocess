@@ -173,14 +173,14 @@ def plot(meta: Meta) -> Result[str, Exception]:
     if meta.src_cnt == 3:
         s3_desc = f" - {meta.s3_desc}" if meta.s3_desc else ""
         display(Markdown(f"### 3rd source sound{s3_desc}"))
-        src_plot(meta.s3_fn)
+        src_plot(meta.s3_fn) if meta.s3_fn else None
 
         display(Markdown(f"### 3rd estimated sound{s3_desc}"))
-        src_plot(meta.est_s3_fn)
+        src_plot(meta.est_s3_fn) if meta.est_s3_fn else None
 
     if meta.has_noise:
         display(Markdown("### Noise sound"))
-        src_plot(meta.noise_fn)
+        src_plot(meta.noise_fn) if meta.noise_fn else None
 
     return Success("plot good")
 
