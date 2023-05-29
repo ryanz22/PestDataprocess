@@ -149,7 +149,7 @@ def src_plot(fp: Path) -> str:
 
 
 def plot(meta: Meta) -> Result[str, Exception]:
-    print(meta)
+    # print(meta)
     display(Markdown(f"## {meta.title}"))
     display(Markdown(f"**{meta.description}**"))
 
