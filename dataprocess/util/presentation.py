@@ -89,8 +89,8 @@ def parse_meta(
         noise_fn = mappings.get("noise", None)
         if noise_fn is None:
             return Failure(Exception("Missing noise wav"))
-        else:
-            noise_fn = parent / noise_fn
+
+        noise_fn = parent / noise_fn
         fn_list.append(noise_fn)
 
     s3_fn, est_s3_fn, s3_desc = None, None, None
@@ -98,16 +98,16 @@ def parse_meta(
         s3_fn = mappings.get("s3", None)
         if s3_fn is None:
             return Failure(Exception("Missing s3 wav"))
-        else:
-            s3_fn = parent / s3_fn
+
+        s3_fn = parent / s3_fn
 
         s3_desc = mappings.get("s3_desc", None)
 
         est_s3_fn = mappings.get("est_s3", None)
         if est_s3_fn is None:
             return Failure(Exception("Missing est_s3 wav"))
-        else:
-            est_s3_fn = parent / est_s3_fn
+
+        est_s3_fn = parent / est_s3_fn
 
         fn_list.extend([s3_fn, est_s3_fn])
 
