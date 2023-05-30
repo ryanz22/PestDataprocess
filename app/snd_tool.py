@@ -466,6 +466,7 @@ def snr(signal: str, noise: str, snr_type):
     """
     code sample
     https://github.com/JusperLee/Calculate-SNR-SDR
+    https://huggingface.co/speechbrain/REAL-M-sisnr-estimator
 
     SNR (Signal-to-Noise Ratio) is a measure commonly used to evaluate the quality
     of a signal by comparing the strength of the desired signal to the level of
