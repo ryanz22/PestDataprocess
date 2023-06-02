@@ -127,12 +127,12 @@ def parse_meta(
             s1_desc=s1_desc,
             s2_fn=s2_fn,
             s2_desc=s2_desc,
-            s3_fn=s3_fn if s3_fn else None,
+            s3_fn=s3_fn,
             s3_desc=s3_desc,
             est_s1_fn=est_s1_fn,
             est_s2_fn=est_s2_fn,
-            est_s3_fn=est_s3_fn if est_s3_fn else None,
-            noise_fn=noise_fn if noise_fn else None,
+            est_s3_fn=est_s3_fn,
+            noise_fn=noise_fn,
         )
     )
 
@@ -173,10 +173,12 @@ def plot(meta: Meta) -> Result[str, Exception]:
     if meta.src_cnt == 3:
         s3_desc = f" - {meta.s3_desc}" if meta.s3_desc else ""
         display(Markdown(f"### 3rd source sound{s3_desc}"))
-        src_plot(meta.s3_fn) if meta.s3_fn else None
+        if meta.s3_fn:
+            src_plot(meta.s3_fn)
 
         display(Markdown(f"### 3rd estimated sound{s3_desc}"))
-        src_plot(meta.est_s3_fn) if meta.est_s3_fn else None
+        if meta.est_s3_fn:
+            src_plot(meta.est_s3_fn)
 
     if meta.has_noise:
         display(Markdown("### Noise sound"))
