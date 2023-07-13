@@ -27,6 +27,16 @@ def check_create_folder(dn: str) -> Path:
 
 
 def copy_dir_only(idir: str, odir: str):
+    """_summary_
+    https://www.geeksforgeeks.org/python-copy-directory-structure-without-files/
+
+    Args:
+        idir (str): _description_
+        odir (str): _description_
+
+    Returns:
+        _type_: _description_
+    """
     import shutil
 
     # defining the function to ignore the files
@@ -36,4 +46,22 @@ def copy_dir_only(idir: str, odir: str):
 
     # calling the shutil.copytree() method and
     # passing the src,dst,and ignore parameter
-    shutil.copytree(idir, odir, ignore=ignore_files)
+    shutil.copytree(idir, odir, ignore=ignore_files, dirs_exist_ok=True)
+
+
+def common_parent_path(path1: Path, path2: Path) -> Path:
+    return Path(os.path.commonpath([path1, path2]))
+
+
+def extract_path_without_root(path1: Path) -> Path:
+    # Extract the path parts
+    parts = path1.parts
+    print(parts)
+    # Reconstruct the path without the root
+    # new_path = Path("").joinpath(*parts[1:])
+    if path1.is_absolute():
+        new_path = "/" + "/".join(parts[2:])
+    else:
+        new_path = "/".join(parts[1:])
+
+    return Path(new_path)

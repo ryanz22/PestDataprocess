@@ -396,14 +396,37 @@ def mix(in_fn: Tuple[str, str], out_fn: str):
 )
 @click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
 def augment(in_fn: str, bg: str, count: int, out: str, noise: bool):
+    from dataprocess.util.file import (
+        common_parent_path,
+        extract_path_without_root,
+        copy_dir_only,
+    )
+
+    def process(
+        f: pathlib.Path,
+        count: int,
+        bg: str,
+        out_root: str,
+        noise: bool,
+    ):
+        common_p = common_parent_path(f, pathlib.Path(out_root) / f.name)
+        print(f"given f: {f}\nout: {out_root}\ncommon path is: {common_p}")
+        rest_path = extract_path_without_root(f.relative_to(common_p).parent)
+        out_path = str(out_root / rest_path)
+        print(f"aug {f} to {out_path}")
+        augment_single(str(f), count=count, bg=bg, out=out_path, noise=noise)
+
     p = pathlib.Path(in_fn)
 
     if p.is_dir():
         print(f"Augment input folder: {in_fn}")
-        wav_list = [f for f in p.glob("*.wav")]
+        copy_dir_only(in_fn, out)
+
+        wav_list = [f for f in p.glob("**/*.wav")]
         pyf.seq(wav_list).for_each(print)
         pyf.seq(wav_list).for_each(
-            lambda f: augment_single(f, count=count, bg=bg, out=out, noise=noise)
+            # lambda f: augment_single(f, count=count, bg=bg, out=out, noise=noise)
+            lambda f: process(f, count, bg, out, noise)
         )
     else:
         print(f"Augment input file: {in_fn}")
