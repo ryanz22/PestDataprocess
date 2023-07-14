@@ -125,6 +125,8 @@ def create_sep_dataset(
         if s3_fl_cnt == 0:
             return Exception(f"Can NOT find *.wav files in {s3_path}")
 
+    add_noise = False
+    noise_fl_paths = []
     if noise_src:
         # noise_fl_paths = [f.name for f in noise_path.glob("*.wav")]
         noise_fl_paths = list(noise_src.glob("**/*.wav"))
@@ -133,8 +135,8 @@ def create_sep_dataset(
         # print(f"\n\nNoise files:\n{noise_fl_paths}")
         if noise_fl_cnt == 0:
             return Exception(f"Can NOT find *.wav files in {noise_src}")
-    else:
-        noise_fl_paths = []
+
+        add_noise = True
 
     if train_ds is not None:
         random.shuffle(s1_fl_paths)
@@ -151,20 +153,20 @@ def create_sep_dataset(
             mux=mux,
         )
 
-        add_noise = len(noise_fl_paths) > 0
-
         for dir_type, s1_paths in zip(DS_DIR_LIST, ds_paths):
             sub_dir = make_dir(savepath, dir_type, n_src, add_noise)
             with open(savepath / f"{dir_type}_mix_{n_src}.csv", "w") as sub_csv:
                 ret = ds_process_partial(
                     s1_fl_paths=s1_paths,
-                    csv_file=sub_csv,
+                    csvfile=sub_csv,
                     savepath=sub_dir,
+                    ds_mode=dir_type,
                 )
 
             if isinstance(ret, Exception):
                 return ret
     else:
+        sub_dir = make_dir(savepath, "mono", n_src, add_noise)
         with open(savepath / f"mix_{n_src}.csv", "w") as csvfile:
             return process(
                 csvfile,
@@ -175,7 +177,7 @@ def create_sep_dataset(
                 s2_fl_paths=s2_fl_paths,
                 s3_fl_paths=s3_fl_paths,
                 noise_fl_paths=noise_fl_paths,
-                savepath=savepath,
+                savepath=sub_dir,
                 ds_mode="mono",
                 fix_len=fix_len,
             )
@@ -207,6 +209,7 @@ def process(
     writer.writeheader()
     for n in range(0, mux):
         for i, path in enumerate(s1_fl_paths):
+            print(f"s1 file: {path}")
             id = n * s1_fl_cnt + i
 
             s1_wav = copy_file_fix_len(savepath, "s1", path)

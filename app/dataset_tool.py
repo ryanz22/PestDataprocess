@@ -344,7 +344,6 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
 def sep_data(
     out_dir: str,
     mux: int,
-    n_src: int,
     second_src: str,
     third_src: str,
     noise_src: str,
@@ -369,12 +368,13 @@ def sep_data(
         n_src = 3
     print(f"n_src: {n_src}")
 
-    train, val, test = train_ds
-    total = train + val + test
-    if not math.isclose(total, 1.0):
-        raise click.ClickException(
-            f"wrong split ratio total: {total}, train: {train}, val: {val}, test: {test}"
-        )
+    if train_ds:
+        train, val, test = train_ds
+        total = train + val + test
+        if not math.isclose(total, 1.0):
+            raise click.ClickException(
+                f"wrong split ratio total: {total}, train: {train}, val: {val}, test: {test}"
+            )
 
     ret = create_sep_dataset(
         out_p,
@@ -382,8 +382,8 @@ def sep_data(
         n_src=n_src,
         mux=mux,
         second_src=pathlib.Path(second_src),
-        third_src=pathlib.Path(third_src),
-        noise_src=pathlib.Path(noise_src),
+        third_src=pathlib.Path(third_src) if third_src else None,
+        noise_src=pathlib.Path(noise_src) if noise_src else None,
         train_ds=train_ds,
         fix_len=fix_len,
     )
