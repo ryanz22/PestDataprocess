@@ -72,10 +72,9 @@ def split_folders(in_dir: str, out_dir: str, train: float, val: float, test: flo
     # https://davidamos.dev/the-right-way-to-compare-floats-in-python/
     total = train + val + test
     if not math.isclose(total, 1.0):
-        print(
+        raise click.ClickException(
             f"wrong split ratio total: {total}, train: {train}, val: {val}, test: {test}"
         )
-        return
 
     sf.ratio(
         in_dir,
@@ -295,14 +294,7 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     return list(filter(lambda p: p.suffix in ext, p.parent.glob("**/*")))
 
 
-@cli.command(help="Generate src sep dataset")
-@click.option(
-    "-i",
-    "--in_dir",
-    required=True,
-    type=click.Path(exists=True, dir_okay=True),
-    help="the raw dataset folder",
-)
+@cli.command(help="Generate source separation dataset")
 @click.option(
     "-o", "--out_dir", required=True, type=click.Path(exists=True, dir_okay=True)
 )
@@ -312,20 +304,10 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     "--mux", type=int, required=True, default=1, help="multiplexer of mix sample count"
 )
 @click.option(
-    "--n_src", type=int, required=True, default=2, help="source count, support 2 or 3"
-)
-@click.option(
     "--main_src",
-    type=str,
+    type=click.Path(exists=True, dir_okay=True),
     required=True,
-    help="the main source folder name, must specify a folder contains train/val/test subfoloder when used with --train_ds option",
-)
-@click.option(
-    "--gh_src",
-    type=str,
-    required=False,
-    default="gh-21",
-    help="the grasshopper source folder name, default is gh-21",
+    help="the main source folder, must specify a folder contains train/val/test subfoloder when used with --train_ds option",
 )
 @click.option(
     "--fix_len",
@@ -336,54 +318,45 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
 )
 @click.option(
     "--second_src",
-    type=click.Choice(["bird", "gh", "cricket"]),
+    type=click.Path(exists=True, dir_okay=True),
     required=True,
-    default="bird",
-    help="specify the 2nd source, default is bird",
+    help="specify the 2nd source folder",
 )
 @click.option(
     "--third_src",
-    type=click.Choice(["bird", "gh", "cricket"]),
-    required=True,
-    default="cricket",
-    help="specify the 3rd source, default is cricket",
+    type=click.Path(exists=True, dir_okay=True),
+    required=False,
+    help="specify the 3rd source folder",
 )
-@click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
+@click.option(
+    "--noise_src",
+    type=click.Path(exists=True, dir_okay=True),
+    required=False,
+    help="specify the noise source folder",
+)
 @click.option(
     "--train_ds",
     nargs=3,
-    type=int,
+    type=float,
     required=False,
-    help="sample count multiplexer of train, val, test",
+    help="split factor of train, val, test",
 )
 def sep_data(
-    in_dir: str,
     out_dir: str,
     mux: int,
     n_src: int,
     second_src: str,
     third_src: str,
-    noise: bool,
+    noise_src: str,
     train_ds: tuple[int, int, int],
     fix_len: int,
     main_src: str,
-    gh_src: str,
 ):
-    print(f"input folder: {in_dir}")
-    print(f"output folder: {out_dir}")
-    print(f"n_src: {n_src}")
-    print(f"noise: {noise}")
-    print(f"train_ds: {train_ds}")
+    import math
 
-    if train_ds is not None:
-        if not (pathlib.Path(in_dir) / main_src / "train").exists():
-            # print(
-            #     f"when --train_ds is specified, main_src folder must contain train/val/test subfolders"
-            # )
-            # return
-            raise click.ClickException(
-                f"when --train_ds is specified, main_src folder must contain train/val/test subfolders"
-            )
+    print(f"output folder: {out_dir}")
+    print(f"noise: {noise_src}")
+    print(f"train_ds: {train_ds}")
 
     out_p = pathlib.Path(out_dir)
     if any(out_p.iterdir()):
@@ -391,16 +364,26 @@ def sep_data(
             f"output folder {out_p} has content already, please double check"
         )
 
+    n_src = 2
+    if third_src:
+        n_src = 3
+    print(f"n_src: {n_src}")
+
+    train, val, test = train_ds
+    total = train + val + test
+    if not math.isclose(total, 1.0):
+        raise click.ClickException(
+            f"wrong split ratio total: {total}, train: {train}, val: {val}, test: {test}"
+        )
+
     ret = create_sep_dataset(
-        pathlib.Path(in_dir),
         out_p,
-        main_src=main_src,
-        gh_src=gh_src,
+        main_src=pathlib.Path(main_src),
         n_src=n_src,
         mux=mux,
-        second_src=second_src,
-        third_src=third_src,
-        addnoise=noise,
+        second_src=pathlib.Path(second_src),
+        third_src=pathlib.Path(third_src),
+        noise_src=pathlib.Path(noise_src),
         train_ds=train_ds,
         fix_len=fix_len,
     )

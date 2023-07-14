@@ -162,3 +162,20 @@ def xeno_canto_meta(in_dir: str) -> List[Tuple[pathlib.Path, str]] | str:
     meta_dsn_list = pyf.seq(meta_files).zip(pyf.seq(ds_names)).list()
 
     return meta_dsn_list
+
+
+def split_list(my_list: list, factors: tuple[float, float, float]) -> list[list]:
+    import math
+
+    total_length = len(my_list)
+    split_points = [math.ceil(total_length * factor) for factor in factors]
+
+    s_list = []
+    start = 0
+
+    for split_point in split_points:
+        end = start + split_point
+        s_list.append(my_list[start:end])
+        start = end
+
+    return s_list
