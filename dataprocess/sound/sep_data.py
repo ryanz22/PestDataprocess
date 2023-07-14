@@ -96,6 +96,9 @@ def create_sep_dataset(
     s1_path = main_src
     # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
     s1_fl_paths = list(s1_path.glob("**/*.wav"))
+    if mux > 1:
+        s1_fl_paths = s1_fl_paths * mux
+
     s1_fl_cnt = len(s1_fl_paths)
     if s1_fl_cnt == 0:
         return Exception(f"Can NOT find *.wav files in {s1_path}")
@@ -150,7 +153,6 @@ def create_sep_dataset(
             csv_columns=csv_columns,
             n_src=n_src,
             fix_len=fix_len,
-            mux=mux,
         )
 
         for dir_type, s1_paths in zip(DS_DIR_LIST, ds_paths):
@@ -171,7 +173,6 @@ def create_sep_dataset(
             return process(
                 csvfile,
                 csv_columns=csv_columns,
-                mux=mux,
                 n_src=n_src,
                 s1_fl_paths=s1_fl_paths,
                 s2_fl_paths=s2_fl_paths,
@@ -186,7 +187,6 @@ def create_sep_dataset(
 def process(
     csvfile: TextIO,
     csv_columns: list[str],
-    mux: int,
     n_src: int,
     s1_fl_paths: list[pathlib.Path],
     s2_fl_paths: list[pathlib.Path],
@@ -207,47 +207,44 @@ def process(
 
     writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
     writer.writeheader()
-    for n in range(0, mux):
-        for i, path in enumerate(s1_fl_paths):
-            print(f"s1 file: {path}")
-            id = n * s1_fl_cnt + i
+    for sid, path in enumerate(s1_fl_paths):
+        print(f"s1 file: {path}")
 
-            s1_wav = copy_file_fix_len(savepath, "s1", path)
-            s2_wav = copy_file_fix_len(savepath, "s2", random_pick(s2_fl_paths))
-            mix_wav = savepath / "mix" / f"mix_{id}.wav"
+        s1_wav = copy_file_fix_len(savepath, "s1", path)
+        s2_wav = copy_file_fix_len(savepath, "s2", random_pick(s2_fl_paths))
+        mix_wav = savepath / "mix" / f"mix_{sid}.wav"
 
-            row = {
-                "ID": id,
-                "mix_wav": f"$data_root/{ds_mode}/mix/" + str(mix_wav.name),
-                "s1_wav": f"$data_root/{ds_mode}/s1/" + str(s1_wav.name),
-                "s2_wav": f"$data_root/{ds_mode}/s2/" + str(s2_wav.name),
-            }
-            if n_src == 3:
-                s3_wav = copy_file_fix_len(savepath, "s3", random_pick(s3_fl_paths))
-                row["s3_wav"] = f"$data_root/{ds_mode}/s3/" + str(s3_wav.name)
-            else:
-                s3_wav = None
+        row = {
+            "ID": sid,
+            "mix_wav": f"$data_root/{ds_mode}/mix/" + str(mix_wav.name),
+            "s1_wav": f"$data_root/{ds_mode}/s1/" + str(s1_wav.name),
+            "s2_wav": f"$data_root/{ds_mode}/s2/" + str(s2_wav.name),
+        }
 
-            if noise_fl_paths:
-                noise_wav = copy_file_fix_len(
-                    savepath, "noise", random_pick(noise_fl_paths)
-                )
-                row["noise_wav"] = f"$data_root/{ds_mode}/noise/" + str(noise_wav.name)
-            else:
-                noise_wav = None
+        s3_wav = None
+        if n_src == 3:
+            s3_wav = copy_file_fix_len(savepath, "s3", random_pick(s3_fl_paths))
+            row["s3_wav"] = f"$data_root/{ds_mode}/s3/" + str(s3_wav.name)
 
-            ret = mix(
-                s1_wav,
-                s2_wav,
-                s3_wav,
-                noise_wav,
-                mix_wav,
-                n_src,
+        noise_wav = None
+        if noise_fl_paths:
+            noise_wav = copy_file_fix_len(
+                savepath, "noise", random_pick(noise_fl_paths)
             )
-            if isinstance(ret, Exception):
-                return ret
+            row["noise_wav"] = f"$data_root/{ds_mode}/noise/" + str(noise_wav.name)
 
-            writer.writerow(row)
+        ret = mix(
+            s1_wav,
+            s2_wav,
+            s3_wav,
+            noise_wav,
+            mix_wav,
+            n_src,
+        )
+        if isinstance(ret, Exception):
+            return ret
+
+        writer.writerow(row)
 
 
 def random_pick(fl: list[pathlib.Path]) -> None | pathlib.Path:
