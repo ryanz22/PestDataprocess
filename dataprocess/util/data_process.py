@@ -168,7 +168,10 @@ def split_list(my_list: list, factors: tuple[float, float, float]) -> list[list]
     import math
 
     total_length = len(my_list)
-    split_points = [math.ceil(total_length * factor) for factor in factors]
+    split_points = [math.floor(total_length * factor) for factor in factors]
+    left_over = total_length - sum(split_points)
+    if left_over > 0:
+        split_points = [split_points[0], split_points[1], split_points[2] + left_over]
 
     s_list = []
     start = 0

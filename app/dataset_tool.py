@@ -23,10 +23,9 @@ from dataprocess.cwt.scalogram import (
     plot_scalo,
 )
 from dataprocess.util.data_process import read_snd_file
-
 from dataprocess.sound.preprocess import snd_peaks, normalize
-
 from dataprocess.sound.sep_data import create_sep_dataset
+from dataprocess.sound.audio_id_data import prepare_audio_id_ds
 
 
 @click.group()
@@ -339,6 +338,7 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     nargs=3,
     type=float,
     required=False,
+    default=[0.7, 0.2, 0.1],
     help="split factor of train, val, test",
 )
 def sep_data(
@@ -394,7 +394,7 @@ def sep_data(
             print(ret)
 
 
-@cli.command(help="Generate src sep dataset")
+@cli.command(help="check the length of wav files")
 @click.option(
     "-i", "--in_dir", required=True, type=click.Path(exists=True, dir_okay=True)
 )
@@ -425,6 +425,85 @@ def check_len(in_dir: str, fix_len: int):
         .filter(lambda t: t[1] != fix_len)
     )
     print(f"soundtracks whose len is NOT {fix_len}:\n{pyf.seq(ret)}")
+
+
+@cli.command(help="Generate audio identification dataset")
+@click.option(
+    "-o", "--out_dir", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+# @click.option("--sr", type=int, required=True)
+# @click.option("--tsr", type=int, required=True)
+@click.option(
+    "--mux", type=int, required=True, default=1, help="multiplexer of mix sample count"
+)
+@click.option(
+    "--main_src",
+    type=click.Path(exists=True, dir_okay=True),
+    required=True,
+    help="the main source folder, must specify a folder contains train/val/test subfoloder when used with --train_ds option",
+)
+@click.option(
+    "--duration",
+    type=float,
+    required=False,
+    default=2.0,
+    help="specify the duration of soundtrack, such as 2.0",
+)
+@click.option(
+    "--train_ds",
+    nargs=3,
+    type=float,
+    required=False,
+    default=[0.7, 0.2, 0.1],
+    help="split factor of train, val, test",
+)
+def audio_id_data(
+    out_dir: str,
+    mux: int,
+    train_ds: tuple[int, int, int],
+    duration: float,
+    main_src: str,
+):
+    import math
+    from returns.result import Result, Success, Failure
+
+    print(f"output folder: {out_dir}")
+    print(f"train_ds: {train_ds}")
+
+    out_p = pathlib.Path(out_dir)
+    if any(out_p.iterdir()):
+        raise click.ClickException(
+            f"output folder {out_p} has content already, please double check"
+        )
+
+    if train_ds:
+        train, val, test = train_ds
+        total = train + val + test
+        if not math.isclose(total, 1.0):
+            raise click.ClickException(
+                f"wrong split ratio total: {total}, train: {train}, val: {val}, test: {test}"
+            )
+
+    # def prepare_audio_id_ds(
+    #     data_folder,
+    #     save_folder,
+    #     splits=["train", "dev", "test"],
+    #     split_ratio=[90, 10],
+    #     seg_dur=3.0,
+    # ):
+    ret = prepare_audio_id_ds(
+        data_folder=pathlib.Path(main_src),
+        save_folder=out_p,
+        mux=mux,
+        split_ratio=train_ds,
+        dur=duration,
+    )
+
+    match ret:
+        case Success():
+            print(f"dataset is created under {out_p}")
+        case Failure(ex):
+            raise click.ClickException(str(ex))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-
+import glob
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,3 +65,11 @@ def extract_path_without_root(path1: Path) -> Path:
         new_path = "/".join(parts[1:])
 
     return Path(new_path)
+
+
+def list_subfolders(root_folder: Path, pattern: str = "*") -> list[str]:
+    pattern_str = os.path.join(str(root_folder), pattern)
+    test_subfolders = [
+        folder for folder in glob.glob(pattern_str) if os.path.isdir(folder)
+    ]
+    return test_subfolders
