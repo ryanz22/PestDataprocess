@@ -118,7 +118,7 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
     type=(str, float, float),
     default=("inch", 10.0, 4.0),
     show_default=True,
-    help="output image dimension, can be ('inch', 10, 4) or ('cm', 20, 8) or ('px', 512, 512)",
+    help="output image dimension, can be 'inch' 10 4 or 'cm' 20 8 or 'px' 512 512",
 )
 @click.option(
     "--show_scale",
