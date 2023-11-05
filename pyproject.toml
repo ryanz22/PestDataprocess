@@ -9,6 +9,9 @@ packages = [
 	{ include = "dataprocess" }
 ]
 
+[tool.poetry.config]
+virtualenvs.in-project = false
+
 [tool.poetry.dependencies]
 python = "~3.11"
 PyYAML = { version="^6.0" }
