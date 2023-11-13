@@ -118,8 +118,9 @@ def plot_spectro(
     dim=("inch", 10, 4),
     show_scale: bool = False,
     dpi: int = 256,
+    fmax: int = -1,
 ):
-    F_MAX = sr // 2
+    F_MAX = fmax if fmax > 0 else sr // 2
     S = librosa.feature.melspectrogram(y=d, sr=sr, n_mels=256, fmax=F_MAX)
     S_db = librosa.power_to_db(S, ref=np.max)
 

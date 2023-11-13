@@ -140,6 +140,13 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
     default=256,
     show_default=True,
 )
+@click.option(
+    "--fmax",
+    required=False,
+    type=int,
+    default=-1,
+    show_default=True,
+)
 def plot(
     in_fn: str,
     ptype: str,
@@ -149,6 +156,7 @@ def plot(
     show_scale: bool,
     out_fn: str,
     dpi: int,
+    fmax: int,
 ):
     """_summary_
 
@@ -165,6 +173,7 @@ def plot(
         return
 
     d1, sr1 = librosa.load(in_fn, sr=None, mono=True)
+    print(f"input file SR: {sr1}")
 
     if not out_fn:
         out_fn = append_suffix(in_fn, ptype)
@@ -175,7 +184,7 @@ def plot(
         case "waveshow":
             plot_waveshow(d1, sr1, out_fn, dim, show_scale, dpi)
         case "spectrogram":
-            plot_spectro(d1, sr1, out_fn, threshold, cmap, dim, show_scale, dpi)
+            plot_spectro(d1, sr1, out_fn, threshold, cmap, dim, show_scale, dpi, fmax)
         case "fft":
             plot_fft(d1, sr1, out_fn, dim, show_scale, dpi)
         case "scalogram":

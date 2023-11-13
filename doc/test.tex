@@ -1,11 +1,20 @@
-\documentclass[12pt, letterpaper]{article}
+\documentclass[12pt, letterpaper]{book}
 \usepackage{graphicx}
 \graphicspath{.}
 \title{My test doc}
 \author{Kevin Zhang}
 \date{Nov 2023}
 \begin{document}
-\maketitle
+% \begin{abstract}
+% 	This is a simple paragraph at the beginning of the 
+% 	document. A brief introduction about the main subject.
+% \end{abstract}
+% \maketitle
+
+\chapter{First Chapter}
+
+\section{introduction}
+
 First document. This is a \textbf{simple} example, with \textbf{\textit{no 
 extra parameters}} or \underline{packages included}.
 
@@ -19,6 +28,8 @@ in science were made by accident.}
 in science were made by accident.}
 % thie is a comment line.
 
+\section{Picture}
+
 % The \includegraphcs command is provided (implemented) by the 
 % graphicx package
 \begin{figure}[h]
@@ -28,20 +39,27 @@ in science were made by accident.}
 	\label{fig:sound1}
 \end{figure}
 
+\section{List}
+
 \textbf{Unordered list}
 \begin{itemize}
 	\item The individual entries are indicated with a black dot, a so-called bullet.
 	\item The text in the entries may be of any length.
 \end{itemize}
+
 \textbf{Ordered list}
 \begin{enumerate}
 	\item This is the first entry in our list.
 	\item The list numbers increase with each entry we add.
 \end{enumerate}
+
+\section{Math}
+
 \textbf{Inline math mode\\}
 In physics, the mass-energy equivalence is stated 
 by the equation $E=mc^2$, discovered in 1905 by Albert Einstein.
-\textbf{\\Display math mode\\}
+
+\textbf{Display math mode\\}
 The mass-energy equivalence is described by the famous equation
 \[ E=mc^2 \] discovered in 1905 by Albert Einstein. 
 
@@ -49,4 +67,30 @@ In natural units ($c = 1$), the formula expresses the identity
 \begin{equation}
 E=m
 \end{equation}
+
+After our abstract we can begin the first paragraph, then press ``enter'' twice to start the second one.
+
+This line will start a second paragraph.
+
+I will start the third paragraph and then add \\ a manual line break which causes this text to start on a new line but remains part of the same paragraph. Alternatively, I can use the \verb|\newline|\newline command to start a new line, which is also part of the same paragraph.
+
+\section{Table}
+
+Table \ref{table:data} shows how to add a table caption and reference a table.
+
+\begin{table}[ht!]
+\centering
+\begin{tabular}{c | c | c | c}
+ Col1 & Col2 & Col2 & Col3 \\ [0.5ex]
+ \hline
+ 1 & 6 & 87837 & 787 \\ 
+ 2 & 7 & 78 & 5415 \\
+ 3 & 545 & 778 & 7507 \\
+ 4 & 545 & 18744 & 7560 \\
+ 5 & 88 & 788 & 6344 \\ [1ex]
+ \hline
+\end{tabular}
+\caption{Table to test captions and labels.}
+\label{table:data}
+\end{table}
 \end{document}
