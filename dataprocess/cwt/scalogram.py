@@ -250,7 +250,7 @@ def plot_all(
     out_fn: str | None,
     threshold: int = -60,
     cmap: str = "magma",
-    dim=("inch", 10, 10),
+    dim=("inch", 10, 14),
     show_scale: bool = False,
     dpi: int = 256,
 ):

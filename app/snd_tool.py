@@ -396,6 +396,7 @@ def mix(in_fn: Tuple[str, str], out_fn: str):
 )
 @click.option("--noise/--no-noise", default=False, help="if add noise source to mix")
 def augment(in_fn: str, bg: str, count: int, out: str, noise: bool):
+    # https://www.kaggle.com/code/huseinzol05/sound-augmentation-librosa
     from dataprocess.util.file import (
         common_parent_path,
         extract_path_without_root,
