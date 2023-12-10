@@ -101,15 +101,13 @@ def normalize(in_fn: str, tsr: int, ext: str):
 
 
 @cli.command(help="resample input sound file and output to the same location")
-@click.option(
-    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=False)
-)
-@click.option("-t", "--tsr", default=22050)
-def resample(in_fn: str, tsr: int):
-    data, sr = librosa.load(in_fn, sr=None, mono=False)
-    od, nsr = resam(data, sr, tsr=tsr)
-    out_fn = append_suffix(in_fn, str(nsr))
-    if pathlib.Path(in_fn).suffix != ".wav":
+@click.argument("filename", required=True, type=click.Path(exists=True, dir_okay=False))
+@click.argument("target_sr", default=22050)
+def resample(filename: str, target_sr: int):
+    data, sr = librosa.load(filename, sr=None, mono=False)
+    od, nsr = resam(data, int(sr), tsr=target_sr)
+    out_fn = append_suffix(filename, str(nsr))
+    if pathlib.Path(filename).suffix != ".wav":
         out_fn = change_ext(out_fn, ".wav")
     sf.write(out_fn, od, nsr)
 
