@@ -299,10 +299,10 @@ def plot_all(
     axes[3].plot(xf, np.abs(yf))
 
     if show_scale:
-        axes[0].set(title="wave show")
-        axes[1].set(title="Mel-frequency spectrogram")
-        axes[2].set(title="Scalogram")
-        axes[3].set(title="FFT")
+        axes[0].set(title="Wavefrom (time-domain)")
+        axes[1].set(title="Mel-frequency spectrogram (STFT)")
+        axes[2].set(title="Scalogram (CWT)")
+        axes[3].set(title="Fast Fourier Transform (frequency-domain)")
         # axes[3].set_xlabel("Frequence")
         # axes[3].set_ylabel("mag")
     else:
