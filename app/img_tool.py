@@ -66,11 +66,41 @@ def split(in_fn: str, row: int, col: int, square: bool, out_dir):
     if os.path.isdir(in_fn):
         for file in os.listdir(in_fn):
             if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith(".png"):
-                split_image(os.path.join(in_fn, file), row, col,
-                            square, False, False, out_dir)
+                split_image(
+                    os.path.join(in_fn, file), row, col, square, False, False, out_dir
+                )
     else:
         split_image(in_fn, row, col, square, False, False, out_dir)
-                
+
+
+@cli.command(help="Resize images")
+@click.option(
+    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option("--width", type=int, required=True)
+@click.option("--height", type=int, required=True)
+@click.option("--out_dir", required=True, type=click.Path(exists=True, file_okay=False))
+def resize(in_fn: str, width: int, height: int, out_dir: str):
+    from PIL import Image
+
+    def resize_img(fn: str, w: int, h: int, out: str):
+        img = Image.open(fn)
+        new_img = img.resize((w, h))
+        new_img.save(os.path.join(out, os.path.basename(fn)))
+
+    if os.path.isdir(in_fn):
+        for file in os.listdir(in_fn):
+            if (
+                file.endswith(".jpg")
+                or file.endswith(".jpeg")
+                or file.endswith(".png")
+                or file.endswith(".bmp")
+            ):
+                resize_img(os.path.join(in_fn, file), width, height, out_dir)
+    else:
+        resize_img(in_fn, width, height, out_dir)
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
