@@ -101,6 +101,46 @@ def resize(in_fn: str, width: int, height: int, out_dir: str):
         resize_img(in_fn, width, height, out_dir)
 
 
+@cli.command(help="Dump raw bytes of image files")
+@click.option(
+    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option("--out_dir", required=True, type=click.Path(exists=True, file_okay=False))
+def dump_raw(in_fn: str, out_dir: str):
+    from PIL import Image
+    import numpy as np
+
+    def dump(fn: str, out: str):
+        # Open the BMP file
+        with Image.open(fn) as img:
+            # Ensure the image is in grayscale mode
+            if img.mode != "L":
+                img = img.convert("L")
+
+            # Convert image data to a numpy array
+            img_data = np.array(img)
+
+            # Get byte data from the numpy array
+            byte_data = img_data.tobytes()
+
+            # Write the byte data to a file
+            fn2 = change_ext(fn, ".bin")
+            with open(os.path.join(out, os.path.basename(fn2)), "wb") as file:
+                file.write(byte_data)
+
+    if os.path.isdir(in_fn):
+        for file in os.listdir(in_fn):
+            if (
+                file.endswith(".jpg")
+                or file.endswith(".jpeg")
+                or file.endswith(".png")
+                or file.endswith(".bmp")
+            ):
+                dump(os.path.join(in_fn, file), out_dir)
+    else:
+        dump(in_fn, out_dir)
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
