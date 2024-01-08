@@ -141,6 +141,38 @@ def dump_raw(in_fn: str, out_dir: str):
         dump(in_fn, out_dir)
 
 
+@cli.command(help="Load raw bytes and convert to image files")
+@click.option(
+    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option("--width", type=int, required=True)
+@click.option("--height", type=int, required=True)
+@click.option("--out_dir", required=True, type=click.Path(exists=True, file_okay=False))
+def convert_raw(in_fn: str, width: int, height: int, out_dir: str):
+    from PIL import Image
+    import io
+
+    def raw_bmp(fn: str, w: int, h: int, out: str):
+        # Open the BMP file
+        with open(fn, "rb") as file:
+            raw_bytes = file.read()
+            # bytes_io = io.BytesIO(raw_bytes)
+            img = Image.new("L", (w, h))
+            img.frombytes(raw_bytes)
+
+            # Write the byte data to a file
+            fn2 = change_ext(fn, ".bmp")
+            with open(os.path.join(out, os.path.basename(fn2)), "wb") as outf:
+                img.save(outf)
+
+    if os.path.isdir(in_fn):
+        for file in os.listdir(in_fn):
+            if file.endswith(".bin"):
+                raw_bmp(os.path.join(in_fn, file), width, height, out_dir)
+    else:
+        raw_bmp(in_fn, width, height, out_dir)
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
