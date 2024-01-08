@@ -173,6 +173,32 @@ def convert_raw(in_fn: str, width: int, height: int, out_dir: str):
         raw_bmp(in_fn, width, height, out_dir)
 
 
+@cli.command(help="Convert gray-level image to black/white image")
+@click.option(
+    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option("--threshold", type=int, required=True, default=128)
+@click.option("--out_dir", required=True, type=click.Path(exists=True, file_okay=False))
+def gray_bw(in_fn: str, threshold: int, out_dir: str):
+    import cv2
+
+    def gr_bw(fn: str, th: int, out: str):
+        gimg = cv2.imread(fn, cv2.IMREAD_GRAYSCALE)
+        _, bwimg = cv2.threshold(gimg, th, 255, cv2.THRESH_BINARY)
+
+        # Write the byte data to a file
+        fn2 = change_ext(fn, ".bmp")
+        tmp_fn = os.path.join(out, os.path.basename(fn2))
+        cv2.imwrite(tmp_fn, bwimg)
+
+    if os.path.isdir(in_fn):
+        for file in os.listdir(in_fn):
+            if file.endswith(".bmp"):
+                gr_bw(os.path.join(in_fn, file), threshold, out_dir)
+    else:
+        gr_bw(in_fn, threshold, out_dir)
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
