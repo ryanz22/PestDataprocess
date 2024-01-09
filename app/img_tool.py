@@ -178,9 +178,16 @@ def convert_raw(in_fn: str, width: int, height: int, out_dir: str):
     "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=True)
 )
 @click.option("--threshold", type=int, required=True, default=128)
+@click.option(
+    "--type",
+    type=click.Choice(["rgb-gray", "gray-bw"]),
+    default="rgb-gray",
+    show_default=True,
+)
 @click.option("--out_dir", required=True, type=click.Path(exists=True, file_okay=False))
-def gray_bw(in_fn: str, threshold: int, out_dir: str):
+def rgb_gray_bw(in_fn: str, threshold: int, type: str, out_dir: str):
     import cv2
+    from PIL import Image
 
     def gr_bw(fn: str, th: int, out: str):
         gimg = cv2.imread(fn, cv2.IMREAD_GRAYSCALE)
@@ -191,12 +198,28 @@ def gray_bw(in_fn: str, threshold: int, out_dir: str):
         tmp_fn = os.path.join(out, os.path.basename(fn2))
         cv2.imwrite(tmp_fn, bwimg)
 
+    def rgb_gr(fn: str, out: str):
+        cimg = Image.open(fn)
+        g_img = cimg.convert("L")
+
+        # Write the byte data to a file
+        fn2 = change_ext(fn, ".bmp")
+        tmp_fn = os.path.join(out, os.path.basename(fn2))
+        g_img.save(tmp_fn)
+
+    def conv(fn: str, th: int, type: str, out: str):
+        match type:
+            case "rgb-gray":
+                rgb_gr(fn, out)
+            case "gray-bw":
+                gr_bw(fn, threshold, out)
+
     if os.path.isdir(in_fn):
         for file in os.listdir(in_fn):
-            if file.endswith(".bmp"):
-                gr_bw(os.path.join(in_fn, file), threshold, out_dir)
+            if file.endswith(".bmp") or file.endswith(".png"):
+                conv(os.path.join(in_fn, file), threshold, type, out_dir)
     else:
-        gr_bw(in_fn, threshold, out_dir)
+        conv(in_fn, threshold, type, out_dir)
 
 
 @cli.command(help="Flip image")
