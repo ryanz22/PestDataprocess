@@ -199,6 +199,43 @@ def gray_bw(in_fn: str, threshold: int, out_dir: str):
         gr_bw(in_fn, threshold, out_dir)
 
 
+@cli.command(help="Flip image")
+@click.option(
+    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option(
+    "--direction",
+    type=click.Choice(["v", "h", "vh"]),
+    default="v",
+    show_default=True,
+)
+@click.option("--out_dir", required=True, type=click.Path(exists=True, file_okay=False))
+def flip(in_fn: str, direction: str, out_dir: str):
+    from PIL import Image
+
+    def f(fn: str, direct: str, out: str):
+        img = Image.open(fn)
+        match direct:
+            case "v":
+                f_img = img.transpose(Image.FLIP_TOP_BOTTOM)
+            case "h":
+                f_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            case "vh":
+                t_img = img.transpose(Image.FLIP_TOP_BOTTOM)
+                f_img = t_img.transpose(Image.FLIP_LEFT_RIGHT)
+
+        # Write the byte data to a file
+        tmp_fn = os.path.join(out, os.path.basename(fn))
+        f_img.save(tmp_fn)
+
+    if os.path.isdir(in_fn):
+        for file in os.listdir(in_fn):
+            if file.endswith(".bmp"):
+                f(os.path.join(in_fn, file), direction, out_dir)
+    else:
+        f(in_fn, direction, out_dir)
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
