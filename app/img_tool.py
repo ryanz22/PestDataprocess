@@ -259,6 +259,76 @@ def flip(in_fn: str, direction: str, out_dir: str):
         f(in_fn, direction, out_dir)
 
 
+@cli.command(help="Convert image format, such as jpg to png")
+@click.option(
+    "-f", "--in_fn", required=True, type=click.Path(exists=True, dir_okay=True)
+)
+@click.option(
+    "--from_format",
+    type=click.Choice(["heic", "jpg", "bmp", "png"]),
+    default="bmp",
+    show_default=True,
+)
+@click.option(
+    "--to_format",
+    type=click.Choice(["jpg", "bmp", "png"]),
+    default="bmp",
+    show_default=True,
+)
+@click.option("--out_dir", required=True, type=click.Path(exists=True, file_okay=False))
+def convert_format(in_fn: str, from_format: str, to_format: str, out_dir: str):
+    from PIL import Image
+    import pyheif
+
+    def prepare_output(fn: str, out: str, to_f: str) -> tuple[str, str]:
+        match to_f:
+            case "bmp":
+                fn2 = change_ext(fn, ".bmp")
+                s_type = "BMP"
+            case "png":
+                fn2 = change_ext(fn, ".png")
+                s_type = "PNG"
+            case _:
+                raise click.ClickException(f"Unsupport output format {to_f}")
+
+        # Write the byte data to a file
+        tmp_fn = os.path.join(out, os.path.basename(fn2))
+        return tmp_fn, s_type
+
+    def f(fn: str, to_f: str, out: str):
+        print(f"Process {fn}")
+        fp = pathlib.Path(fn)
+        fext = fp.suffix
+
+        match fext:
+            case ".heic" | ".HEIC":
+                heif_f = pyheif.read(fn)
+                image = Image.frombytes(
+                    heif_f.mode,
+                    heif_f.size,
+                    heif_f.data,
+                    "raw",
+                    heif_f.mode,
+                    heif_f.stride,
+                )
+                tmp_fn, s_type = prepare_output(fn, out, to_f)
+                image.save(tmp_fn, s_type)
+            case ".jpg" | ".jpeg" | ".JPG":
+                image = Image.open(fn)
+                tmp_fn, s_type = prepare_output(fn, out, to_f)
+                image.save(tmp_fn, s_type)
+            case _:
+                raise click.ClickException(f"Unsupport input format {fext}")
+
+    in_path = pathlib.Path(in_fn)
+    if in_path.is_dir():
+        for file in in_path.glob(f"*.{from_format}"):
+            print(f"#1: Process {file}")
+            f(str(file), to_format, out_dir)
+    else:
+        f(in_fn, to_format, out_dir)
+
+
 if __name__ == "__main__":
     print(f"python version is {sys.version_info}")
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
