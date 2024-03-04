@@ -116,7 +116,7 @@ def single_extract(in_fn: str, out_dir: str, threshold, imgsize):
 @click.option(
     "--dim",
     type=(str, float, float),
-    default=("inch", 10.0, 4.0),
+    default=("inch", 10.0, 8.0),
     show_default=True,
     help="output image dimension, can be 'inch' 10 4 or 'cm' 20 8 or 'px' 512 512",
 )
@@ -200,14 +200,14 @@ def plot(
     # plt.close() # no need
 
 
-@cli.command(help="plot two wav files")
+@cli.command(help="plot multiple wav files")
 @click.option(
     "-f",
     "--fn_list",
     type=click.Tuple([str, str]),
     multiple=True,
     required=True,
-    help="-f tag file_path",
+    help="-f tag file_path and repeat multiple times",
 )
 @click.option("--sr", type=int, required=True)
 @click.option("--duration", type=float, required=True)
@@ -221,7 +221,7 @@ def plot_sources(
     print(fn_list)
 
     for tag, fn in fn_list:
-        print(f"{tag:20s}{fn}")
+        print(f"tag: {tag:20s}filename: {fn}\n")
 
     all_fn = pyfun.seq(fn_list).map(lambda t: t[1]).list()
 
@@ -281,7 +281,7 @@ def plot_sources(
 
     all_tag = pyfun.seq(fn_list).map(lambda t: t[0]).list()
     tmp = pyfun.seq(all_tag).zip(pyfun.seq(all_fn)).dict()
-    print(tmp)
+    print(f"tags: {tmp}")
 
     meta = pyfun.seq(all_tag).zip(pyfun.seq(new_all_data)).dict()
     print(meta)
