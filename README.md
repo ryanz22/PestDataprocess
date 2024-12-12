@@ -8,7 +8,7 @@
 ### Linux env setup
 
 ```sh
-sudo apt install libcairo2-dev libsndfile-dev gobject-introspection libgirepository1.0-dev libsox-dev ffmpeg
+sudo apt install libcairo2-dev libsndfile-dev gobject-introspection libgirepository1.0-dev libsox-dev ffmpeg python3-dev
 ```
 
 ### Macbook env setup
