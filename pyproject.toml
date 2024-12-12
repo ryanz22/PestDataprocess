@@ -18,7 +18,7 @@ matplotlib = { version="3.5.3" }
 scipy = { version="1.14.1" }
 PyWavelets = { version="1.3.0" }
 "mpl-toolkits.clifford" = { version="^0.0.3" }
-numpy = { version="2.2.0" }
+numpy = { version="2.0.2" }
 librosa = { version="0.9.2" }
 scaleogram = { git = "https://github.com/alsauve/scaleogram.git", branch = "master" }
 seaborn = { version="0.12.0" }
@@ -51,7 +51,8 @@ hypothesis = "^6.82.4"
 pyheif = "^0.7.1"
 typer = "^0.9.0"
 albumentations = "^1.3.1"
-#llvmlite = "0.41.0"
+llvmlite = "0.43.0"
+numba = "0.60"
 
 [tool.poetry.dev-dependencies]
 
