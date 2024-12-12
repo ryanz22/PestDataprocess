@@ -21,6 +21,11 @@ sudo ln -s /opt/homebrew/include/sox.h /Library/Developer/CommandLineTools/SDKs/
 sudo ln -s /opt/homebrew/lib/libsox.a /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk/usr/lib/libsox.a
 ```
 
+https://stackoverflow.com/questions/70497361/homebrew-mac-m1-cant-find-installs
+
+export CPATH=/opt/homebrew/include
+export LIBRARY_PATH=/opt/homebrew/lib
+
 ## How to run
 
 ```sh
