@@ -24,10 +24,10 @@ DEFAULT_MAX_VAL = 2 ** 16  #: (int): Max value of 16-bit audio file (unsigned)
 EPSILON = 1e-16  #: (float): epsilon for determining small values
 MAX_FREQUENCY = DEFAULT_SAMPLE_RATE // 2  #: (int): Maximum frequency representable. 22050 Hz
 
-WINDOW_HAMMING = scipy.signal.hamming.__name__  #: (str): Name for calling Hamming window. 'hamming'
+WINDOW_HAMMING = scipy.signal.windows.hamming.__name__  #: (str): Name for calling Hamming window. 'hamming'
 WINDOW_RECTANGULAR = 'rectangular'  #: (str): Name for calling Rectangular window. 'rectangular'
-WINDOW_HANN = scipy.signal.hann.__name__  #: (str): Name for calling Hann window. 'hann'
-WINDOW_BLACKMAN = scipy.signal.blackman.__name__  #: (str): Name for calling Blackman window. 'blackman'
+WINDOW_HANN = scipy.signal.windows.hann.__name__  #: (str): Name for calling Hann window. 'hann'
+WINDOW_BLACKMAN = scipy.signal.windows.blackman.__name__  #: (str): Name for calling Blackman window. 'blackman'
 WINDOW_TRIANGULAR = 'triang'  #: (str): Name for calling Triangular window. 'triangular'
 WINDOW_SQRT_HANN = 'sqrt_hann'  #: (str): Name for calling square root of hann window. 'sqrt_hann'.
 
