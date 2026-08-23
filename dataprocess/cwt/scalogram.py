@@ -55,38 +55,20 @@ def fft_process(d2, sr):
     return xf, yf
 
 
-def convert_dim_inch(t: str, w: float, h: float, dpi: int) -> Tuple[float, float]:
-    ow = w
-    oh = h
-
-    match t:
-        case "cm":
-            cm = 1 / 2.54
-            ow = w * cm
-            oh = h * cm
-        case "px":
-            print(f"calc px, dpi: {dpi}")
-            px = 1 / dpi
-            ow = w * px
-            oh = h * px
-
-    return ow, oh
+def dim_to_inches(t: str, w: float, h: float, dpi: int) -> Tuple[float, float]:
+    if t == "cm":
+        return w / 2.54, h / 2.54
+    elif t == "px":
+        return w / dpi, h / dpi
+    return w, h
 
 
-def convert_dim_px(t: str, w: float, h: float, dpi: int) -> Tuple[float, float]:
-    ow = w
-    oh = h
-
-    match t:
-        case "cm":
-            cm = dpi / 2.54
-            ow = w * cm
-            oh = h * cm
-        case "inch":
-            ow = w * dpi
-            oh = h * dpi
-
-    return ow, oh
+def dim_to_pixels(t: str, w: float, h: float, dpi: int) -> Tuple[float, float]:
+    if t == "cm":
+        return w * dpi / 2.54, h * dpi / 2.54
+    elif t == "inch":
+        return w * dpi, h * dpi
+    return w, h
 
 
 def plot_waveshow(
@@ -98,7 +80,7 @@ def plot_waveshow(
     dpi: int = 256,
 ):
     t, w, h = dim
-    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
+    dim_w, dim_h = dim_to_inches(t, w, h, dpi)
     fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
     librosa.display.waveshow(y=d, sr=sr, ax=ax)
     if show_scale:
@@ -107,6 +89,7 @@ def plot_waveshow(
         ax.set_axis_off()
 
     fig.savefig(out_fn)
+    plt.close(fig)
 
 
 def plot_spectro(
@@ -125,7 +108,7 @@ def plot_spectro(
     S_db = librosa.power_to_db(S, ref=np.max)
 
     t, w, h = dim
-    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
+    dim_w, dim_h = dim_to_inches(t, w, h, dpi)
 
     if show_scale:
         fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
@@ -148,6 +131,7 @@ def plot_spectro(
         ax.set(title="Mel-Frequency Spectrogram")
 
         fig.savefig(out_fn)
+        plt.close(fig)
     else:
         fig = plt.figure(figsize=(dim_w, dim_h))
         ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
@@ -167,7 +151,8 @@ def plot_spectro(
 
         # bbox = matplotlib.transforms.Bbox(((0, 0), (dim_w, dim_h)))
         fig.savefig(out_fn, bbox_inches=0, pad_inches=0, dpi=dpi)
-        # dim_w, dim_h = convert_dim_px(t, w, h, dpi)
+        plt.close(fig)
+        # dim_w, dim_h = dim_to_pixels(t, w, h, dpi)
         # img = img_resize(
         #     S_db, w=int(dim_w), h=int(dim_h), log=False, lthres=threshold, cmap=cmap
         # )
@@ -195,7 +180,7 @@ def plot_scalo(
     cs1 = replace_zeroes(cs1)
 
     if show_scale:
-        dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
+        dim_w, dim_h = dim_to_inches(t, w, h, dpi)
         fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h), dpi=dpi)
         ax.set_xlabel("Time")
         ax.set(title="Scalogram")
@@ -210,8 +195,9 @@ def plot_scalo(
         )
         fig.colorbar(img, ax=ax, format="%+2.0f dB")
         fig.savefig(out_fn)
+        plt.close(fig)
     else:
-        dim_w, dim_h = convert_dim_px(t, w, h, dpi)
+        dim_w, dim_h = dim_to_pixels(t, w, h, dpi)
         img = img_resize(
             cs1, w=int(dim_w), h=int(dim_h), log=True, lthres=threshold, cmap=cmap
         )
@@ -229,7 +215,7 @@ def plot_fft(
     xf, yf = fft_process(d, sr)
 
     t, w, h = dim
-    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
+    dim_w, dim_h = dim_to_inches(t, w, h, dpi)
 
     fig, ax = plt.subplots(1, 1, figsize=(dim_w, dim_h))
     ax.plot(xf, np.abs(yf))
@@ -242,6 +228,7 @@ def plot_fft(
         ax.set_axis_off()
 
     fig.savefig(out_fn)
+    plt.close(fig)
 
 
 def plot_all(
@@ -265,7 +252,7 @@ def plot_all(
     logger.debug(f"shape of f1: {f1.shape}")
 
     t, w, h = dim
-    dim_w, dim_h = convert_dim_inch(t, w, h, dpi)
+    dim_w, dim_h = dim_to_inches(t, w, h, dpi)
 
     # print(f"plot graph as {dim_w}inch x {dim_h}inch")
 

@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 #   sr: sampling frequency (Hz)
 #   low_freq: lowest frequency (Hz) of interest (limts longest scale)
 def cwt2(data, nv=10, sr=1.0, low_freq=0.0):
-    data -= np.mean(data)
+    data = data - np.mean(data)
     n_orig = data.size
     ds = 1 / nv
     dt = 1 / sr
@@ -75,7 +75,7 @@ def cwt2(data, nv=10, sr=1.0, low_freq=0.0):
     )
 
     # Inverse transform to obtain the wavelet coefficients.
-    cwtcfs = np.fft.ifft(np.kron(np.ones([num_scales, 1]), f) * psift)
+    cwtcfs = np.fft.ifft(f[np.newaxis, :] * psift)
     logger.debug(
         f"size of cwtcfs: {cwtcfs.size}, memory of cwtcfs {cwtcfs.size * cwtcfs.itemsize}"
     )
@@ -105,7 +105,7 @@ def calc_scales(totalscal: int = 256, wavename: str = "cmor3-3"):
 
 
 def cwt3(data, nv=10, sr=1.0, low_freq=0.0):
-    data -= np.mean(data)
+    data = data - np.mean(data)
     # n_orig = data.size
     # ds = 1 / nv
     # _, _, wavscales = getDefaultScales(n_orig, ds, sr, low_freq)
@@ -267,7 +267,7 @@ def calc_var(cs, thres):
 def mask_sig(n, peaks, sr=22050, dur=0.1):
     mask = np.zeros(n)
     subm = int(sr * dur * 0.5)
-    if len(peaks > 0):
+    if len(peaks) > 0:
         for p in peaks:
             mask[max(p - subm, 0) : min(p + subm, n)] = 1
     return mask
