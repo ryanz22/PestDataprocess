@@ -1,10 +1,9 @@
-import sys
 import os
+import pathlib
 from timeit import default_timer as timer
 from datetime import timedelta
 import psutil
 import click
-import logging
 import librosa
 from typing import Tuple, List
 import functional as pyfun
@@ -20,6 +19,7 @@ from dataprocess.cwt.scalogram import (
 from dataprocess.util.file import change_ext, check_create_folder, append_suffix
 from dataprocess.sound.plot_wav import show_sources
 from dataprocess.sound.nussl import AudioSignal
+from cli_bootstrap import bootstrap_cli
 
 
 @click.group()
@@ -43,17 +43,17 @@ def cli():
 @click.option("--threshold", type=int, default=-60)
 @click.option("--imgsize", type=int, default=256)
 def extract(in_dir: str, out_dir: str, threshold, imgsize):
-    TRAIN_DIR = "data/sound/cornell-birdcall/train_audio"
-
     check_create_folder(out_dir)
 
-    flist = [
-        "/btbwar/XC139608.mp3",
-        "/btbwar/XC51863.mp3",
-        "/btbwar/XC134502.mp3",
-        "/btbwar/XC415596.mp3",
-    ]
-    plist = [f"{TRAIN_DIR}{f}" for f in flist]
+    flist = sorted(
+        str(p)
+        for p in pathlib.Path(in_dir).glob("**/*")
+        if p.suffix.lower() in {".mp3", ".wav"}
+    )
+    if not flist:
+        raise click.ClickException(f"no .mp3/.wav files found under {in_dir}")
+
+    plist = flist
     print(f"plist: {plist}")
     start = timer()
     core_cnt = psutil.cpu_count(logical=False)
@@ -225,7 +225,7 @@ def plot_sources(
 
     all_fn = pyfun.seq(fn_list).map(lambda t: t[1]).list()
 
-    missing_fn = pyfun.seq(all_fn).filter_not(lambda f: os.path.exists(fn)).list()
+    missing_fn = pyfun.seq(all_fn).filter_not(lambda f: os.path.exists(f)).list()
 
     if missing_fn:
         pyfun.seq(missing_fn).for_each(lambda fn: print(f"{fn} doesn't exist\n"))
@@ -303,18 +303,5 @@ def test():
 
 
 if __name__ == "__main__":
-    print(f"python version is {sys.version_info}")
-    if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
-        sys.exit("this program needs python 3.10 and above to run")
-
-    # https://towardsdatascience.com/a-simple-guide-to-command-line-arguments-with-argparse-6824c30ab1c3
-    # print(f'sys.path:\n{sys.path}')
-
-    l_fmt = "[%(name)s %(levelname)s] %(asctime)s - %(message)s"
-    ch = logging.StreamHandler()
-    ch.setFormatter(logging.Formatter(l_fmt))
-    logger = logging.getLogger("dataprocess")
-    logger.addHandler(ch)
-    logger.setLevel(logging.ERROR)
-
+    bootstrap_cli()
     cli()

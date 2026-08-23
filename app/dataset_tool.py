@@ -1,22 +1,11 @@
-import os
-import sys
 import pathlib
-import numpy as np
-import pprint
 from typing import Tuple, List
 import click
-import logging
 import functional as pyf
-import shutil
 import soundfile as sf
 from functools import partial
 
-from dataprocess.util.file import (
-    copy_dir_only,
-    check_create_folder,
-    change_ext,
-    append_suffix,
-)
+from dataprocess.util.file import copy_dir_only, check_create_folder, out_wav_path
 from dataprocess.util.data_process import process_all, xeno_canto_meta
 from dataprocess.cwt.scalogram import (
     plot_spectro,
@@ -26,6 +15,7 @@ from dataprocess.util.data_process import read_snd_file
 from dataprocess.sound.preprocess import snd_peaks, normalize
 from dataprocess.sound.sep_data import create_sep_dataset
 from dataprocess.sound.audio_id_data import prepare_audio_id_ds
+from cli_bootstrap import bootstrap_cli
 
 
 @click.group()
@@ -126,9 +116,12 @@ def resize_all_img(in_dir: str, out_dir: str, ext: str, width: int, height: int)
 
         return f"resize {fn} to {ofn}"
 
-    copy_dir_only(in_dir, out_dir)
-    resize_p = partial(resize, rwidth=width, rheight=height)
-    process_all(result, in_dir=in_dir, out_dir=out_dir, func=resize_p, out_ext="auto")
+    try:
+        copy_dir_only(in_dir, out_dir)
+        resize_p = partial(resize, rwidth=width, rheight=height)
+        process_all(result, in_dir=in_dir, out_dir=out_dir, func=resize_p, out_ext="auto")
+    except ValueError as e:
+        raise click.ClickException(str(e))
 
 
 @cli.command(help="plot all wave files recursively")
@@ -173,29 +166,32 @@ def plot_all_wav(in_dir: str, out_dir: str, ext: str, width: int, dpi: int, ptyp
         plot_scalo(d, sr, ofn, dim=("inch", width, width), dpi=224)
         return f"plot {fn} scalogram to {ofn}"
 
-    match ptype:
-        case "spectrogram":
-            process_all(
-                result,
-                in_dir=in_dir,
-                out_dir=out_dir,
-                func=plot_sp,
-                out_ext="png",
-                processes=8,
-                partition=8,
-            )
-        case "scalogram":
-            process_all(
-                result,
-                in_dir=in_dir,
-                out_dir=out_dir,
-                func=plot_sc,
-                out_ext="png",
-                processes=8,
-                partition=8,
-            )
-        case _:
-            print(f"Unknown plot type: {ptype}")
+    try:
+        match ptype:
+            case "spectrogram":
+                process_all(
+                    result,
+                    in_dir=in_dir,
+                    out_dir=out_dir,
+                    func=plot_sp,
+                    out_ext="png",
+                    processes=8,
+                    partition=8,
+                )
+            case "scalogram":
+                process_all(
+                    result,
+                    in_dir=in_dir,
+                    out_dir=out_dir,
+                    func=plot_sc,
+                    out_ext="png",
+                    processes=8,
+                    partition=8,
+                )
+            case _:
+                print(f"Unknown plot type: {ptype}")
+    except ValueError as e:
+        raise click.ClickException(str(e))
 
 
 @cli.command(help="Processing xeno-canto sound peaks recursively")
@@ -206,8 +202,8 @@ def plot_all_wav(in_dir: str, out_dir: str, ext: str, width: int, dpi: int, ptyp
     "-o", "--out_dir", required=True, type=click.Path(exists=False, dir_okay=True)
 )
 @click.option("--sr", type=int, required=True)
-@click.option("--back", type=float, required=True, default=0.2)
-@click.option("--forth", type=float, required=True, default=2.0)
+@click.option("--back", type=float, default=0.2, show_default=True)
+@click.option("--forth", type=float, default=2.0, show_default=True)
 def xeno_canto_peaks(in_dir: str, out_dir: str, sr: int, back: float, forth: float):
     result = [str(f) for f in pathlib.Path(in_dir).glob(f"**/*.wav")]
     print(f"result:\n{result}")
@@ -222,7 +218,10 @@ def xeno_canto_peaks(in_dir: str, out_dir: str, sr: int, back: float, forth: flo
         return f"find peaks in {fn} and output to {od}"
 
     peaks_f = partial(process_peaks, back=back, forth=forth)
-    process_all(result, in_dir=in_dir, out_dir=out_dir, func=peaks_f, out_ext="dir")
+    try:
+        process_all(result, in_dir=in_dir, out_dir=out_dir, func=peaks_f, out_ext="dir")
+    except ValueError as e:
+        raise click.ClickException(str(e))
 
 
 @cli.command(help="Normalizing xeno-canto sound recursively")
@@ -235,10 +234,10 @@ def xeno_canto_peaks(in_dir: str, out_dir: str, sr: int, back: float, forth: flo
 @click.option("--sr", type=int, required=True)
 @click.option("--tsr", type=int, required=True)
 def xeno_canto_normalize(in_dir: str, out_dir: str, sr: int, tsr: int):
-    meta_dsn_list = xeno_canto_meta(in_dir)
-    if isinstance(meta_dsn_list, str):
-        print(meta_dsn_list)
-        return
+    try:
+        meta_dsn_list = xeno_canto_meta(in_dir)
+    except ValueError as e:
+        raise click.ClickException(str(e))
 
     # print(meta_dsn_list)
     print_f = lambda t: print(f"{t[0].name}\t\t{t[1]}")
@@ -257,9 +256,7 @@ def xeno_canto_normalize(in_dir: str, out_dir: str, sr: int, tsr: int):
         # print(f"in file path: {infp}")
         # print(f"out dir: {od}")
 
-        out_fn = append_suffix(str(od / infp.name), "mono")
-        if infp.suffix != ".wav":
-            out_fn = change_ext(out_fn, ".wav")
+        out_fn = out_wav_path(str(od / infp.name), "mono")
         sf.write(out_fn, y, sr)
         return f"normalize {infp} and save to {od}"
 
@@ -341,6 +338,13 @@ def fetch_sound_files(p: pathlib.Path) -> List[pathlib.Path]:
     default=[0.7, 0.2, 0.1],
     help="split factor of train, val, test",
 )
+@click.option(
+    "--seed",
+    type=int,
+    required=False,
+    default=None,
+    help="random seed for reproducible source picking/shuffling",
+)
 def sep_data(
     out_dir: str,
     mux: int,
@@ -350,6 +354,7 @@ def sep_data(
     train_ds: tuple[int, int, int],
     fix_len: int,
     main_src: str,
+    seed: int | None,
 ):
     import math
 
@@ -376,22 +381,21 @@ def sep_data(
                 f"wrong split ratio total: {total}, train: {train}, val: {val}, test: {test}"
             )
 
-    ret = create_sep_dataset(
-        out_p,
-        main_src=pathlib.Path(main_src),
-        n_src=n_src,
-        mux=mux,
-        second_src=pathlib.Path(second_src),
-        third_src=pathlib.Path(third_src) if third_src else None,
-        noise_src=pathlib.Path(noise_src) if noise_src else None,
-        train_ds=train_ds,
-        fix_len=fix_len,
-    )
-    match ret:
-        case Exception():
-            raise click.ClickException(str(ret))
-        case _:
-            print(ret)
+    try:
+        create_sep_dataset(
+            out_p,
+            main_src=pathlib.Path(main_src),
+            n_src=n_src,
+            mux=mux,
+            second_src=pathlib.Path(second_src),
+            third_src=pathlib.Path(third_src) if third_src else None,
+            noise_src=pathlib.Path(noise_src) if noise_src else None,
+            train_ds=train_ds,
+            fix_len=fix_len,
+            seed=seed,
+        )
+    except ValueError as e:
+        raise click.ClickException(str(e))
 
 
 @cli.command(help="check the length of wav files")
@@ -507,21 +511,5 @@ def audio_id_data(
 
 
 if __name__ == "__main__":
-    print(f"python version is {sys.version_info}")
-    if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
-        sys.exit("this program needs python 3.10 and above to run")
-
-    # https://towardsdatascience.com/a-simple-guide-to-command-line-arguments-with-argparse-6824c30ab1c3
-    print(f"sys.path:\n{sys.path}")
-
-    # l_fmt = '[%(levelname)s] %(asctime)s - %(message)s'
-    # logging.basicConfig(level=logging.ERROR, format=l_fmt)
-
-    l_fmt = "[%(name)s %(levelname)s] %(asctime)s - %(message)s"
-    ch = logging.StreamHandler()
-    ch.setFormatter(logging.Formatter(l_fmt))
-    logger = logging.getLogger("dataset_tool")
-    logger.addHandler(ch)
-    logger.setLevel(logging.ERROR)
-
+    bootstrap_cli("dataset_tool")
     cli()

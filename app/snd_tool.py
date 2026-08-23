@@ -1,6 +1,3 @@
-import os
-import sys
-import glob
 import pathlib
 import numpy as np
 import pprint
@@ -12,7 +9,7 @@ import logging
 import functional as pyf
 import pydub
 
-from dataprocess.util.file import append_suffix, change_ext, check_create_folder
+from dataprocess.util.file import change_ext, check_create_folder, out_wav_path
 from dataprocess.sound.audio_augment import augment_single
 from dataprocess.sound.preprocess import (
     denoise as deno,
@@ -26,10 +23,11 @@ from dataprocess.sound.preprocess import (
 )
 from dataprocess.sound.filter_util import load_audio_file, freq_filter
 from dataprocess.util.data_process import read_snd_file
+from cli_bootstrap import bootstrap_cli
 
 import warnings
 
-warnings.filterwarnings("ignore")  # get rid of librosa warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="librosa")
 
 
 @click.group()
@@ -44,9 +42,7 @@ def cli():
 def denoise(in_fn: str):
     data, sr = librosa.load(in_fn, sr=None, mono=True)
     od, sr = deno(data, sr)
-    out_fn = append_suffix(in_fn, "denoised")
-    if pathlib.Path(in_fn).suffix != ".wav":
-        out_fn = change_ext(out_fn, ".wav")
+    out_fn = out_wav_path(in_fn, "denoised")
     print(f"output file name: {out_fn}")
     sf.write(out_fn, od, sr)
 
@@ -59,9 +55,7 @@ def mono(in_fn: str):
     if is_stereo_sound(in_fn):
         data, sr = librosa.load(in_fn, sr=None, mono=False)
         od, sr = to_mono(data, sr)
-        out_fn = append_suffix(in_fn, "mono")
-        if pathlib.Path(in_fn).suffix != ".wav":
-            out_fn = change_ext(out_fn, ".wav")
+        out_fn = out_wav_path(in_fn, "mono")
         sf.write(out_fn, od, sr)
     else:
         print("this is a mono sound track")
@@ -83,9 +77,7 @@ def normalize(in_fn: str, tsr: int, ext: str):
     def conv(fn: str):
         data, sr = librosa.load(fn, sr=None, mono=True)
         data2, sr2 = norm(data, sr, tsr)
-        out_fn = append_suffix(fn, f"mono_{tsr}_denoised")
-        if pathlib.Path(fn).suffix != ".wav":
-            out_fn = change_ext(out_fn, ".wav")
+        out_fn = out_wav_path(fn, f"mono_{tsr}_denoised")
         sf.write(out_fn, data2, sr2)
 
     path = pathlib.Path(in_fn)
@@ -106,9 +98,7 @@ def normalize(in_fn: str, tsr: int, ext: str):
 def resample(filename: str, target_sr: int):
     data, sr = librosa.load(filename, sr=None, mono=False)
     od, nsr = resam(data, int(sr), tsr=target_sr)
-    out_fn = append_suffix(filename, str(nsr))
-    if pathlib.Path(filename).suffix != ".wav":
-        out_fn = change_ext(out_fn, ".wav")
+    out_fn = out_wav_path(filename, str(nsr))
     sf.write(out_fn, od, nsr)
 
 
@@ -161,9 +151,7 @@ def filter(in_fn: str, type: str, fc: None | int, fr: None | Tuple[int, int], sr
 
     in_frames = load_audio_file(in_fn)
 
-    out_fn = append_suffix(in_fn, "filter")
-    if pathlib.Path(in_fn).suffix != ".wav":
-        out_fn = change_ext(out_fn, ".wav")
+    out_fn = out_wav_path(in_fn, "filter")
 
     out_frames = freq_filter(
         in_frames=in_frames,
@@ -200,9 +188,7 @@ def single_slice(in_fn: str, offset: float, length: float):
     print(f"slice {in_fn} offset {offset} length {length}")
 
     y, sr = librosa.load(in_fn, sr=None, mono=False, offset=offset, duration=length)
-    out_fn = append_suffix(in_fn, f"{length:.1f}_sliced")
-    if pathlib.Path(in_fn).suffix != ".wav":
-        out_fn = change_ext(out_fn, ".wav")
+    out_fn = out_wav_path(in_fn, f"{length:.1f}_sliced")
     sf.write(out_fn, y, sr)
 
 
@@ -222,7 +208,7 @@ def single_slice(in_fn: str, offset: float, length: float):
 )
 def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
     print(f"slice {in_fn} slice_len {slice_len} hop {hop} out_dir {out_dir}")
-    _, sr = librosa.load(in_fn, sr=None, mono=False)
+    sr = sf.info(in_fn).samplerate
     slices_gen = librosa.stream(
         in_fn,
         block_length=1,
@@ -235,12 +221,8 @@ def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
     out_path = check_create_folder(out_dir)
 
     tmp_fn = pathlib.Path(in_fn).name
-    slices_l = [s for s in slices_gen]
-    for i, s in enumerate(slices_l):
-        out_fn = append_suffix(tmp_fn, str(i))
-        if pathlib.Path(tmp_fn).suffix != ".wav":
-            out_fn = change_ext(out_fn, ".wav")
-
+    for i, s in enumerate(slices_gen):
+        out_fn = out_wav_path(tmp_fn, str(i))
         sf.write(out_path / out_fn, s, sr)
 
 
@@ -256,8 +238,8 @@ def hop_slice(in_fn: str, slice_len: int, hop: float, out_dir: str):
     required=False,
     help="sr will be retrieved from the sound track if not specified",
 )
-@click.option("--back", type=float, required=True, default=0.2)
-@click.option("--forth", type=float, required=True, default=2.0)
+@click.option("--back", type=float, default=0.2, show_default=True)
+@click.option("--forth", type=float, default=2.0, show_default=True)
 @click.option(
     "--out_dir", required=True, type=click.Path(exists=False, file_okay=False)
 )
@@ -281,6 +263,9 @@ def peaks(in_fn: str, sr: int, back: float, forth: float, out_dir: str):
     "--out_dir", required=True, type=click.Path(exists=False, file_okay=False)
 )
 def stretch(in_fn: str, in_dir: str, rate: float, out_dir: str):
+    if in_fn is None and in_dir is None:
+        raise click.ClickException("must specify either -f/--in_fn or -d/--in_dir")
+
     if rate == 1.0:
         print(f"rate is {rate}, no need to stretch")
         return
@@ -295,9 +280,7 @@ def stretch(in_fn: str, in_dir: str, rate: float, out_dir: str):
         out_path = check_create_folder(out_dir)
 
         tmp_fn = pathlib.Path(in_fn).name
-        out_fn = append_suffix(tmp_fn, f"{s_type}_{rate}")
-        if pathlib.Path(tmp_fn).suffix != ".wav":
-            out_fn = change_ext(out_fn, ".wav")
+        out_fn = out_wav_path(tmp_fn, f"{s_type}_{rate}")
 
         sf.write(out_path / out_fn, ny, sr)
     elif in_dir is not None:
@@ -310,7 +293,7 @@ def stretch(in_fn: str, in_dir: str, rate: float, out_dir: str):
             ny = librosa.effects.time_stretch(y, rate=rate)
 
             tmp_fn = wav_file.name
-            out_fn = append_suffix(tmp_fn, f"{s_type}_{rate}")
+            out_fn = out_wav_path(tmp_fn, f"{s_type}_{rate}")
 
             sf.write(out_path / out_fn, ny, sr)
     else:
@@ -356,12 +339,11 @@ def to_wav(in_fn: str, ext: str):
 )
 def mix(in_fn: Tuple[str, str], out_fn: str):
     fn_1, fn_2 = in_fn
-    ret = lib_mix(fn_1, fn_2)
-    if isinstance(ret, Exception):
-        print(ret)
-    else:
-        y_mix, sr = ret
-        sf.write(out_fn, y_mix, sr)
+    try:
+        y_mix, sr = lib_mix(fn_1, fn_2)
+    except ValueError as e:
+        raise click.ClickException(str(e))
+    sf.write(out_fn, y_mix, sr)
 
 
 @cli.command(help="Augment input sound file or folder")
@@ -603,22 +585,5 @@ def snr(signal: str, noise: str, snr_type):
 
 
 if __name__ == "__main__":
-    print(f"python version is {sys.version_info}")
-    if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
-        sys.exit("this program needs python 3.10 and above to run")
-
-    # https://towardsdatascience.com/a-simple-guide-to-command-line-arguments-with-argparse-6824c30ab1c3
-    print(f"sys.path:\n{sys.path}")
-
-    # l_fmt = '[%(levelname)s] %(asctime)s - %(message)s'
-    # logging.basicConfig(level=logging.ERROR, format=l_fmt)
-
-    l_fmt = "[%(name)s %(levelname)s] %(asctime)s - %(message)s"
-    ch = logging.StreamHandler()
-    ch.setFormatter(logging.Formatter(l_fmt))
-    logger = logging.getLogger("dataprocess")
-    logger.addHandler(ch)
-    # logger.setLevel(logging.ERROR)
-    logger.setLevel(logging.DEBUG)
-
+    bootstrap_cli(level=logging.DEBUG)
     cli()
