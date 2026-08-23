@@ -6,8 +6,8 @@ import random
 import shutil
 import sys  # noqa F401
 from pathlib import Path
-import numpy as np
-from tqdm.contrib import tqdm
+import soundfile as sf
+from tqdm import tqdm
 from returns.result import Result, safe, Success, Failure
 
 from dataprocess.util.file import list_subfolders
@@ -73,7 +73,7 @@ def prepare_audio_id_ds(
 
     prepare_csv(data_folder, wav_lst_dev, save_csv_dev)
 
-    prepare_csv(data_folder, wav_lst_dev, save_csv_test)
+    prepare_csv(data_folder, wav_lst_test, save_csv_test)
 
     return Success(None)
 
@@ -119,7 +119,6 @@ def prepare_csv(data_folder: Path, wav_lst: list, csv_file):
     None
     """
     import uuid
-    import librosa
 
     msg = f"Creating csv lists in {csv_file}"
     logger.info(msg)
@@ -134,13 +133,10 @@ def prepare_csv(data_folder: Path, wav_lst: list, csv_file):
         spk_id = str(wav_file).split("/")[0]
         audio_id = f"{spk_id}-{uuid.uuid4()}"
 
-        # Reading the signal (to retrieve duration in seconds)
-        y, sr = librosa.load(str(data_folder / wav_file), sr=None, mono=True)
-        y_len = len(y)
-
-        audio_duration = y_len / sr
+        info = sf.info(str(data_folder / wav_file))
+        audio_duration = info.duration
         start_sample = 0
-        stop_sample = y_len
+        stop_sample = info.frames
 
         # Composition of the csv_line
         csv_line = [

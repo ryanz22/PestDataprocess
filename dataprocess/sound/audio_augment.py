@@ -22,20 +22,22 @@ def augment(d, sr: int, bg: str, count: int = 20, noise: bool = False):
     transforms = [
         TimeStretch(min_rate=0.8, max_rate=1.25, p=0.3),
         PitchShift(min_semitones=-4, max_semitones=4, p=0.3),
-        Shift(min_fraction=-0.5, max_fraction=0.5, p=0.3),
+        Shift(min_shift=-0.5, max_shift=0.5, shift_unit="fraction", p=0.3),
         Reverse(p=0.3),
     ]
 
     if noise:
-        AddGaussianNoise(min_amplitude=0.001, max_amplitude=0.010, p=0.3),
+        transforms.append(
+            AddGaussianNoise(min_amplitude=0.001, max_amplitude=0.010, p=0.3)
+        )
 
     if bg is not None:
         transforms.append(
             AddBackgroundNoise(
                 sounds_path=bg,
                 # sounds_path='../data/sound/background_sounds/mono_5s/bird_mono_44100_2.0_sliced.wav',
-                min_snr_in_db=10.0,
-                max_snr_in_db=30.0,
+                min_snr_db=10.0,
+                max_snr_db=30.0,
                 noise_transform=PolarityInversion(),
                 p=0.5,
             )
