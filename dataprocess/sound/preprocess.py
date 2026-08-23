@@ -9,7 +9,7 @@ import logging
 import soundfile as sf
 
 from dataprocess.util import data_process
-from dataprocess.util.file import append_suffix, change_ext, check_create_folder
+from dataprocess.util.file import check_create_folder, out_wav_path
 from dataprocess.util.data_process import read_snd_file
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def to_mono(y: NDArray, sr: int) -> Tuple[NDArray, int]:
 
 def resample(data: NDArray, sr: int, tsr: int) -> Tuple[NDArray, int]:
     if sr != tsr:
-        y = librosa.resample(data, sr, tsr)
+        y = librosa.resample(data, orig_sr=sr, target_sr=tsr)
         logger.debug(f"shape: {y.shape}")
         logger.debug(f"rate from {sr} to {tsr}")
         return y, tsr
@@ -162,16 +162,13 @@ def snd_peaks(in_fn: str, sr: int, back: float, forth: float, out_dir: str):
 
     tmp_fn = pathlib.Path(in_fn).name
     for i, c in enumerate(clips):
-        out_fn = append_suffix(tmp_fn, str(i))
-        if pathlib.Path(tmp_fn).suffix != ".wav":
-            out_fn = change_ext(out_fn, ".wav")
-
+        out_fn = out_wav_path(tmp_fn, str(i))
         sf.write(out_path / out_fn, c, sr)
 
 
 def normalize(y, sr: int, tsr: int) -> Tuple[NDArray, int]:
     y2, sr2 = to_mono(y, sr)
-    y3, sr3 = resample(y, sr2, tsr)
+    y3, sr3 = resample(y2, sr2, tsr)
     y4, sr4 = denoise(y3, sr3)
 
     return y4, sr4
@@ -179,7 +176,7 @@ def normalize(y, sr: int, tsr: int) -> Tuple[NDArray, int]:
 
 def mix(
     fn_1: str | tuple[NDArray, int], fn_2: str, length: int = 0, mode: str = "shorter"
-) -> Exception | tuple[NDArray, int]:
+) -> tuple[NDArray, int]:
     """
     mode controls how to mix two soundtracks, default is shorter
     shorter means to use the shorter one
@@ -193,7 +190,7 @@ def mix(
     y_2, sr_2 = librosa.load(fn_2, sr=None, mono=True)
 
     if sr_1 != sr_2:
-        return Exception(f"{fn_1} SR {sr_1} is different from {fn_2} SR {sr_2}")
+        raise ValueError(f"{fn_1} SR {sr_1} is different from {fn_2} SR {sr_2}")
 
     l_1 = len(y_1)
     l_2 = len(y_2)
@@ -219,9 +216,7 @@ def mix(
                     padding = l_1 - l_2
                     y_2 = np.pad(y_2, (0, padding), "constant")
             else:
-                return Exception(
-                    f"Unknown mix mode [{mode}], supports shorter or first"
-                )
+                raise ValueError(f"Unknown mix mode [{mode}], supports shorter or first")
 
     y_1 = y_1[:new_l]
     y_2 = y_2[:new_l]

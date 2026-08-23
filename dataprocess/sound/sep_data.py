@@ -6,6 +6,7 @@
 import csv
 import pathlib
 import random
+import shutil
 from enum import Enum
 
 # from io import TextIOWrapper
@@ -57,7 +58,8 @@ def create_sep_dataset(
     noise_src: pathlib.Path,
     train_ds: tuple[float, float, float] = None,
     fix_len: int = 0,
-) -> Exception | None:
+    seed: int | None = None,
+) -> None:
     """
     This functions creates the .csv file and sound mix for the src sep dataset
 
@@ -92,6 +94,8 @@ def create_sep_dataset(
     ID, mix_wav, s1_wav, s2_wav, s3_wav, noise_wav
     """
     csv_columns = MIX2_CSV_COLUMNS
+    if seed is not None:
+        random.seed(seed)
 
     s1_path = main_src
     # s1_fl_paths = [f.name for f in s1_path.glob("*.wav")]
@@ -101,7 +105,7 @@ def create_sep_dataset(
 
     s1_fl_cnt = len(s1_fl_paths)
     if s1_fl_cnt == 0:
-        return Exception(f"Can NOT find *.wav files in {s1_path}")
+        raise ValueError(f"Can NOT find *.wav files in {s1_path}")
 
     print(f"total {len(s1_fl_paths)} files in {s1_path}")
     # print(f"S1 files:\n{s1_fl_paths}")
@@ -113,7 +117,7 @@ def create_sep_dataset(
     s2_fl_cnt = len(s2_fl_paths)
     print(f"source 2 path: total {s2_fl_cnt} files in {s2_path}")
     if s2_fl_cnt == 0:
-        return Exception(f"Can NOT find *.wav files in {s2_path}")
+        raise ValueError(f"Can NOT find *.wav files in {s2_path}")
     # print(f"\n\nS2 files:\n{s2_fl_paths}")
     s3_fl_paths = []
 
@@ -137,7 +141,7 @@ def create_sep_dataset(
         print(f"total {noise_fl_cnt} files in {noise_src}")
         # print(f"\n\nNoise files:\n{noise_fl_paths}")
         if noise_fl_cnt == 0:
-            return Exception(f"Can NOT find *.wav files in {noise_src}")
+            raise ValueError(f"Can NOT find *.wav files in {noise_src}")
 
         add_noise = True
 
@@ -158,19 +162,16 @@ def create_sep_dataset(
         for dir_type, s1_paths in zip(DS_DIR_LIST, ds_paths):
             sub_dir = make_dir(savepath, dir_type, n_src, add_noise)
             with open(savepath / f"{dir_type}_mix_{n_src}.csv", "w") as sub_csv:
-                ret = ds_process_partial(
+                ds_process_partial(
                     s1_fl_paths=s1_paths,
                     csvfile=sub_csv,
                     savepath=sub_dir,
                     ds_mode=dir_type,
                 )
-
-            if isinstance(ret, Exception):
-                return ret
     else:
         sub_dir = make_dir(savepath, "mono", n_src, add_noise)
         with open(savepath / f"mix_{n_src}.csv", "w") as csvfile:
-            return process(
+            process(
                 csvfile,
                 csv_columns=csv_columns,
                 n_src=n_src,
@@ -195,7 +196,7 @@ def process(
     savepath: pathlib.Path,
     ds_mode: str,
     fix_len: int,
-) -> Exception | None:
+) -> None:
     """
     sepformer requires all soundtrack must be exact same length
     """
@@ -203,7 +204,7 @@ def process(
 
     s1_fl_cnt = len(s1_fl_paths)
     if s1_fl_cnt == 0:
-        return Exception("empty s1_fl_paths")
+        raise ValueError("empty s1_fl_paths")
 
     writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
     writer.writeheader()
@@ -233,7 +234,7 @@ def process(
             )
             row["noise_wav"] = f"$data_root/{ds_mode}/noise/" + str(noise_wav.name)
 
-        ret = mix(
+        mix(
             s1_wav,
             s2_wav,
             s3_wav,
@@ -241,8 +242,6 @@ def process(
             mix_wav,
             n_src,
         )
-        if isinstance(ret, Exception):
-            return ret
 
         writer.writerow(row)
 
@@ -264,53 +263,37 @@ def mix(
     noise_wav: pathlib.Path,
     mix_wav: pathlib.Path,
     n_src: int,
-) -> Exception | None:
+) -> None:
     """
     mix will generate mix soundtrack and copy source files
     """
     import soundfile as sf
 
-    ret = lib_mix(str(s1_wav), str(s2_wav), mode="first")
-    if isinstance(ret, Exception):
-        return ret
-
-    y_mix, sr = ret
+    y_mix, sr = lib_mix(str(s1_wav), str(s2_wav), mode="first")
 
     if n_src == 3:
-        ret = lib_mix((y_mix, sr), str(s3_wav), mode="first")
-
-        if isinstance(ret, Exception):
-            return ret
-
-        y_mix, sr = ret
+        y_mix, sr = lib_mix((y_mix, sr), str(s3_wav), mode="first")
 
     if noise_wav:
-        ret = lib_mix((y_mix, sr), str(noise_wav), mode="first")
-
-        if isinstance(ret, Exception):
-            return ret
-
-        y_mix, sr = ret
+        y_mix, sr = lib_mix((y_mix, sr), str(noise_wav), mode="first")
 
     sf.write(str(mix_wav), y_mix, sr)
-
-    return None
 
 
 def make_dir(
     path: pathlib.Path, dir_name: str, n_src: int, noise: bool
 ) -> pathlib.Path:
     new_path = path / dir_name
-    new_path.mkdir()
-    (new_path / "mix").mkdir()
-    (new_path / "s1").mkdir()
-    (new_path / "s2").mkdir()
+    new_path.mkdir(exist_ok=True)
+    (new_path / "mix").mkdir(exist_ok=True)
+    (new_path / "s1").mkdir(exist_ok=True)
+    (new_path / "s2").mkdir(exist_ok=True)
 
     if n_src == 3:
-        (new_path / "s3").mkdir()
+        (new_path / "s3").mkdir(exist_ok=True)
 
     if noise:
-        (new_path / "noise").mkdir()
+        (new_path / "noise").mkdir(exist_ok=True)
 
     return new_path
 
@@ -324,19 +307,18 @@ def copy_file(
 
     dest_file = dest_path / folder / src_file.name  # Create the destination file path
 
-    if not dest_file.exists():
-        if fix_len > 0:  # make sure the dest soundtrack will be the exact len
-            y, sr = librosa.load(str(src_file), sr=None, mono=True)
-            y_len = len(y)
-            if y_len > fix_len:
-                y = y[:fix_len]
-            elif y_len < fix_len:
-                padding = fix_len - y_len
-                y = np.pad(y, (0, padding), "constant")
+    if fix_len > 0:  # make sure the dest soundtrack will be the exact len
+        y, sr = librosa.load(str(src_file), sr=None, mono=True)
+        y_len = len(y)
+        if y_len > fix_len:
+            y = y[:fix_len]
+        elif y_len < fix_len:
+            padding = fix_len - y_len
+            y = np.pad(y, (0, padding), "constant")
 
-            sf.write(str(dest_file), y, sr)
-        else:
-            dest_file.write_bytes(src_file.read_bytes())
+        sf.write(str(dest_file), y, sr)
+    else:
+        shutil.copy2(src_file, dest_file)
 
     return dest_file
 
