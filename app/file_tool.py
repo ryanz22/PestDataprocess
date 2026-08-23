@@ -1,12 +1,10 @@
-import sys
-import os
 import typer
 from typing_extensions import Annotated
 from pathlib import Path
 from enum import Enum
 import shutil
 
-from dataprocess.util.file import append_suffix, change_ext, check_create_folder
+from cli_bootstrap import bootstrap_cli
 
 
 class TorchTask(str, Enum):
@@ -66,11 +64,5 @@ def test():
 
 
 if __name__ == "__main__":
-    print(f"python version is {sys.version_info}")
-    if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
-        sys.exit("this program needs python 3.10 and above to run")
-
-    # https://towardsdatascience.com/a-simple-guide-to-command-line-arguments-with-argparse-6824c30ab1c3
-    print(f"sys.path:\n{sys.path}")
-
+    bootstrap_cli()
     app()

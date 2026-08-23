@@ -1,17 +1,15 @@
 import os
-import sys
-import glob
 import pathlib
 import numpy as np
 import pprint
 from typing import Tuple
 import click
-import logging
 import cv2
 import functional as pyf
 
 from dataprocess.image.split import overlap_split as o_split, split_image
 from dataprocess.util.file import append_suffix, change_ext, check_create_folder
+from cli_bootstrap import bootstrap_cli
 
 
 @click.group()
@@ -474,21 +472,5 @@ def center_crop(in_fn: str, width: int, height: int, type: str, out_dir: str):
 
 
 if __name__ == "__main__":
-    print(f"python version is {sys.version_info}")
-    if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
-        sys.exit("this program needs python 3.10 and above to run")
-
-    # https://towardsdatascience.com/a-simple-guide-to-command-line-arguments-with-argparse-6824c30ab1c3
-    print(f"sys.path:\n{sys.path}")
-
-    # l_fmt = '[%(levelname)s] %(asctime)s - %(message)s'
-    # logging.basicConfig(level=logging.ERROR, format=l_fmt)
-
-    l_fmt = "[%(name)s %(levelname)s] %(asctime)s - %(message)s"
-    ch = logging.StreamHandler()
-    ch.setFormatter(logging.Formatter(l_fmt))
-    logger = logging.getLogger("dataprocess")
-    logger.addHandler(ch)
-    logger.setLevel(logging.ERROR)
-
+    bootstrap_cli()
     cli()
