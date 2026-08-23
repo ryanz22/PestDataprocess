@@ -87,6 +87,10 @@ def test_extract_path_without_root(path1, expected):
         )
     ],
 )
+@pytest.mark.skipif(
+    not Path("ext-gh-class/grasshopper-aug-ds").exists(),
+    reason="requires ext-gh-class symlink target (external media) to exist",
+)
 def test_list_subfolders(root, pattern, expected):
     sub = list_subfolders(root, pattern)
     assert set(sub) == set(expected)
