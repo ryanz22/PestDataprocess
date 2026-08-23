@@ -9,13 +9,6 @@ from returns.pointfree import bind
 
 import functional as pyfn
 
-from IPython.display import display, Markdown
-import librosa
-import IPython
-import matplotlib.pyplot as plt
-
-from dataprocess.cwt.scalogram import plot_all
-
 
 @dataclass
 class Meta:
@@ -57,6 +50,7 @@ def parse_meta(
     fn_list = []
 
     mix_fn, s1_fn, s2_fn, s1_desc, s2_desc = None, None, None, None, None
+    est_s1_fn, est_s2_fn = None, None
 
     mappings = yaml_data["src_mappings"]
     for key in mappings:
@@ -139,17 +133,26 @@ def parse_meta(
 
 @safe
 def src_plot(fp: Path) -> str:
+    from IPython.display import Audio, display
+    import IPython
+    import librosa
+    import matplotlib.pyplot as plt
+
+    from dataprocess.cwt.scalogram import plot_all
+
     d, sr = librosa.load(fp, sr=None)
     display(IPython.display.Audio(data=d, rate=sr))
 
     plot_all(d, sr=sr, out_fn=None, threshold=-60, show_scale=True)
     plt.show()
+    plt.close("all")
 
     return "good"
 
 
 def plot(meta: Meta) -> Result[str, Exception]:
     # print(meta)
+    from IPython.display import Markdown, display
     display(Markdown(f"## {meta.title}"))
     display(Markdown(f"**{meta.description}**"))
 

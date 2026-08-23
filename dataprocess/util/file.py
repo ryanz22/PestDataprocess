@@ -11,6 +11,12 @@ def append_suffix(fn: str, suffix: str) -> str:
     return str(path.with_stem(f"{path.stem}_{suffix}"))
 
 
+def out_wav_path(fn: str, suffix: str) -> str:
+    path = Path(fn)
+    out = path.with_stem(f"{path.stem}_{suffix}")
+    return str(out.with_suffix(".wav")) if path.suffix != ".wav" else str(out)
+
+
 def change_ext(fn: str, ext: str) -> str:
     path = Path(fn)
     return str(path.with_suffix(ext))
